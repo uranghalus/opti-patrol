@@ -99,17 +99,22 @@
  *
  *   node serve-question.mjs --payload question.json [--timeout 900] [--no-open] [--port 0]
  */
-import http from 'node:http';
-import fs from 'node:fs';
-import path from 'node:path';
 import { spawn } from 'node:child_process';
+import fs from 'node:fs';
+import http from 'node:http';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { openSystemBrowser } from './lib/open-system-browser.mjs';
 
 function arg(name, fallback = null) {
   const i = process.argv.indexOf(`--${name}`);
-  if (i === -1) return fallback;
+
+  if (i === -1) {
+return fallback;
+}
+
   const v = process.argv[i + 1];
+
   return v && !v.startsWith('--') ? v : fallback;
 }
 const hasFlag = (name) => process.argv.includes(`--${name}`);
@@ -118,6 +123,7 @@ if (process.env.IMPECCABLE_QUESTION_DISABLED) {
   console.log('serve-question: disabled in this session (no browser); use the structured question tool instead.');
   process.exit(2);
 }
+
 // Headless self-detection, applied only where a browser is actually wanted.
 // --no-open means the caller opens the URL itself, and --wait / --stop /
 // --schema never open anything: --wait polls a daemon whose browser question
@@ -125,11 +131,13 @@ if (process.env.IMPECCABLE_QUESTION_DISABLED) {
 // spurious exit 2 from those breaks the documented loop, which polls --wait
 // while it exits 3 and reads --schema before building a payload.
 const wantsBrowser = !hasFlag('no-open') && !hasFlag('wait') && !hasFlag('stop') && !hasFlag('schema');
+
 if (wantsBrowser && !process.env.IMPECCABLE_QUESTION_FORCE) {
   const headless =
     process.env.CI ||
     (process.env.SSH_CONNECTION && !process.env.DISPLAY) ||
     (process.platform === 'linux' && !process.env.DISPLAY && !process.env.WAYLAND_DISPLAY);
+
   if (headless) {
     console.log('serve-question: no browser detected in this environment (CI/headless/remote); use the structured question tool instead. Set IMPECCABLE_QUESTION_FORCE=1 to serve anyway.');
     process.exit(2);
@@ -143,23 +151,30 @@ if (wantsBrowser && !process.env.IMPECCABLE_QUESTION_FORCE) {
 // and hero calibrates on nothing.
 function printAnswer(raw) {
   console.log(`ANSWER: ${raw}`);
+
   try {
     const a = JSON.parse(raw);
+
     if (a.hero || a.board) {
       console.log("CHOSEN CARD: open the chosen world's board and hero images now, before any code. When your harness only reads files, or runs sandboxed, download them INTO the workspace and open the relative path; a sandboxed viewer rejects absolute paths outside it. They set the craft bar the build must reach.");
     }
+
     if (a.comp) {
       console.log('CHOSEN COMP: the decision comp at that path is compositional option one. On a comp-led build the comp round adds two variations beside it; on a code-led build it returns at the finish review as the critique reference. Never regenerate it from scratch.');
     }
+
     if (a.optionId === 'canon') {
       console.log('CANON CHOSEN: the user picked the category standard on purpose. Ask once for two or three products this should sit alongside; their craft level becomes the quality bar. Execute the canon at full commitment, conventions embraced without irony or smuggled quirk.');
     }
+
     if (a.optionId === 'reroll' && a.register) {
       console.log(`REGISTER: the user steered the next hand to the ${a.register} register. Re-run concept-seed with the same key, the next --reroll round, and --register ${a.register}, then follow what it prints; the register is the user's steering, never yours to pre-select.`);
     }
+
     if (a.followup && a.optionId !== 'reroll') {
       console.log('FOLLOWUP OPEN: the table stays open and the page is showing a loading hand. Deliver the next round now with --update --key <key> --payload <file>, then collect it with --wait; never leave the page waiting on a round you have not sent.');
     }
+
     if (a.buildPath === 'comp' || a.buildPath === 'code') {
       // The page never writes the flip itself, but "never write it" overstated
       // that into a rule the agent then applied to new-work's one-time offer,
@@ -209,7 +224,11 @@ if (hasFlag('schema')) {
 
 if (hasFlag('wait')) {
   const key = arg('key');
-  if (!key) { console.error('serve-question: --wait needs --key'); process.exit(1); }
+
+  if (!key) {
+ console.error('serve-question: --wait needs --key'); process.exit(1); 
+}
+
   const pollSec = Number(arg('poll', '60'));
   const deadline = Date.now() + pollSec * 1000;
   const answered = () => fs.existsSync(answerFile(key));
@@ -222,74 +241,138 @@ if (hasFlag('wait')) {
   const alive = () => {
     try {
       const state = JSON.parse(fs.readFileSync(stateFile(key), 'utf8'));
-      if (state.lastBeat && Date.now() - state.lastBeat < 12000) return true;
-      try { process.kill(state.pid, 0); return true; }
-      catch (err) { return err.code === 'EPERM'; }
-    } catch { return false; }
+
+      if (state.lastBeat && Date.now() - state.lastBeat < 12000) {
+return true;
+}
+
+      try {
+ process.kill(state.pid, 0);
+
+ return true; 
+} catch (err) {
+ return err.code === 'EPERM'; 
+}
+    } catch {
+ return false; 
+}
   };
   let sawClose = false;
+
   while (Date.now() < deadline) {
-    if (answered()) break;
+    if (answered()) {
+break;
+}
+
     // A build-path flip is its own event, not an answer: the round stays
     // open, and the agent's job right now is comps, not code.
     if (fs.existsSync(flipFile(key))) {
-      try { fs.rmSync(flipFile(key)); } catch { /* consumed elsewhere */ }
+      try {
+ fs.rmSync(flipFile(key)); 
+} catch { /* consumed elsewhere */ }
+
       console.log('BUILD PATH FLIPPED: comp (for this session only; never write it to settings). The table is still open and the page shows shimmer where the images will land: generate each open card’s comp into its declared path now, lead first, then collect the answer with --wait again. A card whose comp already exists needs nothing.');
       process.exit(0);
     }
+
     if (!alive()) {
       console.log('serve-question: the question server is gone with no answer. This is a server failure, not a user decision: restart it with --start and the same payload, reopen the URL for the user, and wait again. Never proceed without their choice while their browser session is open.');
       process.exit(2);
     }
+
     try {
       const state = JSON.parse(fs.readFileSync(stateFile(key), 'utf8'));
-      if (state.lastBeat && Date.now() - state.lastBeat > 15000) { sawClose = true; break; }
+
+      if (state.lastBeat && Date.now() - state.lastBeat > 15000) {
+ sawClose = true; break; 
+}
     } catch { /* state mid-write */ }
+
     await new Promise((r) => setTimeout(r, 1000));
   }
+
   if (sawClose && !answered()) {
     console.log('PAGE CLOSED: the question page went away without an answer; re-present, reopen the URL, or fall back to the structured question tool');
     process.exit(4);
   }
-  if (!answered()) { console.log(`WAITING: no answer yet after ${pollSec}s; run --wait --key ${key} again`); process.exit(3); }
+
+  if (!answered()) {
+ console.log(`WAITING: no answer yet after ${pollSec}s; run --wait --key ${key} again`); process.exit(3); 
+}
+
   const collected = fs.readFileSync(answerFile(key), 'utf8').trim();
   printAnswer(collected);
   // A re-roll or a followup-round pick keeps the table open: the server stays
   // alive awaiting --update, so only the answer file is consumed. Terminal
   // choices clean up fully.
   let keepsTableOpen = false;
+
   try {
     const parsedAnswer = JSON.parse(collected);
     keepsTableOpen = parsedAnswer.optionId === 'reroll' || parsedAnswer.followup === true;
   } catch { /* treat as terminal */ }
-  try { fs.rmSync(answerFile(key)); } catch { /* already gone */ }
-  if (!keepsTableOpen) { try { fs.rmSync(stateFile(key)); } catch { /* already gone */ } }
+
+  try {
+ fs.rmSync(answerFile(key)); 
+} catch { /* already gone */ }
+
+  if (!keepsTableOpen) {
+ try {
+ fs.rmSync(stateFile(key)); 
+} catch { /* already gone */ } 
+}
+
   process.exit(0);
 }
 
 if (hasFlag('stop')) {
   const key = arg('key');
-  if (!key) { console.error('serve-question: --stop needs --key'); process.exit(1); }
-  try { process.kill(JSON.parse(fs.readFileSync(stateFile(key), 'utf8')).pid); } catch { /* dead already */ }
-  try { fs.rmSync(answerFile(key)); } catch {}
-  try { fs.rmSync(stateFile(key)); } catch {}
+
+  if (!key) {
+ console.error('serve-question: --stop needs --key'); process.exit(1); 
+}
+
+  try {
+ process.kill(JSON.parse(fs.readFileSync(stateFile(key), 'utf8')).pid); 
+} catch { /* dead already */ }
+
+  try {
+ fs.rmSync(answerFile(key)); 
+} catch {}
+
+  try {
+ fs.rmSync(stateFile(key)); 
+} catch {}
+
   console.log('stopped');
   process.exit(0);
 }
 
 if (hasFlag('update')) {
   const key = arg('key');
-  if (!key || !payloadPath) { console.error('serve-question: --update needs --key and --payload'); process.exit(1); }
+
+  if (!key || !payloadPath) {
+ console.error('serve-question: --update needs --key and --payload'); process.exit(1); 
+}
+
   JSON.parse(fs.readFileSync(payloadPath, 'utf8'));
-  try { process.kill(JSON.parse(fs.readFileSync(stateFile(key), 'utf8')).pid, 0); }
-  catch { console.error('serve-question: no live question server for that key'); process.exit(2); }
+
+  try {
+ process.kill(JSON.parse(fs.readFileSync(stateFile(key), 'utf8')).pid, 0); 
+} catch {
+ console.error('serve-question: no live question server for that key'); process.exit(2); 
+}
+
   fs.copyFileSync(payloadPath, path.join(QUESTION_DIR, `${key}.next.json`));
   console.log('next round delivered; the page reloads itself');
   process.exit(0);
 }
 
 if (hasFlag('start')) {
-  if (!payloadPath) { console.error('serve-question: --start needs --payload <file>'); process.exit(1); }
+  if (!payloadPath) {
+ console.error('serve-question: --start needs --payload <file>'); process.exit(1); 
+}
+
   JSON.parse(fs.readFileSync(payloadPath, 'utf8'));
   fs.mkdirSync(QUESTION_DIR, { recursive: true });
   const key = arg('key') || Math.random().toString(16).slice(2, 10);
@@ -306,14 +389,23 @@ if (hasFlag('start')) {
   child.unref();
   fs.closeSync(logFd);
   const deadline = Date.now() + 8000;
-  while (Date.now() < deadline && !fs.existsSync(stateFile(key))) await new Promise((r) => setTimeout(r, 100));
+
+  while (Date.now() < deadline && !fs.existsSync(stateFile(key))) {
+await new Promise((r) => setTimeout(r, 100));
+}
+
   if (!fs.existsSync(stateFile(key))) {
     let tail = '';
-    try { tail = fs.readFileSync(logFile, 'utf8').trim().split('\n').slice(-4).join('\n  '); } catch { /* log never written */ }
+
+    try {
+ tail = fs.readFileSync(logFile, 'utf8').trim().split('\n').slice(-4).join('\n  '); 
+} catch { /* log never written */ }
+
     console.error(`serve-question: server failed to start${tail ? `\n  ${tail}` : ''}`);
     console.error(`serve-question: log at ${path.relative(process.cwd(), logFile) || logFile}. A sandboxed exec that cannot listen on localhost causes exactly this; rerun this command once through the harness's network-enabled or unsandboxed command tool before falling back.`);
     process.exit(1);
   }
+
   const state = JSON.parse(fs.readFileSync(stateFile(key), 'utf8'));
   console.log(`QUESTION URL: ${state.url}`);
   console.log(`QUESTION KEY: ${key}`);
@@ -323,8 +415,12 @@ if (hasFlag('start')) {
 }
 
 let raw;
-if (payloadPath) raw = fs.readFileSync(payloadPath, 'utf8');
-else raw = fs.readFileSync(0, 'utf8');
+
+if (payloadPath) {
+raw = fs.readFileSync(payloadPath, 'utf8');
+} else {
+raw = fs.readFileSync(0, 'utf8');
+}
 
 // Round state is mutable: a re-roll keeps this server alive and --update
 // swaps in the next hand, so payload, options, and the local-image table
@@ -341,25 +437,45 @@ let liveBuildPath = null;
 
 function loadRound(json) {
   const parsed = JSON.parse(json);
+
   if (!parsed || !Array.isArray(parsed.options) || parsed.options.length === 0) {
     throw new Error('payload needs an options array');
   }
+
   localImages = [];
   const imageSrc = (value) => {
-    if (!value) return null;
-    if (/^https?:\/\//.test(value)) return value;
+    if (!value) {
+return null;
+}
+
+    if (/^https?:\/\//.test(value)) {
+return value;
+}
+
     const abs = path.resolve(value);
-    if (!fs.existsSync(abs)) return null;
+
+    if (!fs.existsSync(abs)) {
+return null;
+}
+
     localImages.push(abs);
+
     return `/img/${localImages.length - 1}`;
   };
   // Comps stream in after the page is served, so their slots register
   // whether or not the file exists yet; /img answers 404 until it lands and
   // the page polls the slot. Remote comp URLs pass through untouched.
   const compSrc = (value) => {
-    if (!value) return null;
-    if (/^https?:\/\//.test(value)) return value;
+    if (!value) {
+return null;
+}
+
+    if (/^https?:\/\//.test(value)) {
+return value;
+}
+
     localImages.push(path.resolve(value));
+
     return `/img/${localImages.length - 1}`;
   };
   payload = parsed;
@@ -377,18 +493,26 @@ function loadRound(json) {
   // familiar door, then the demoted row.
   const declined = options.filter((o) => o.verdict === 'declined');
   options = options.filter((o) => o.verdict !== 'declined');
+
   // The standing exit as a full card: same anatomy, reserved id, rendered
   // subordinate by the page. Without it, canon stays the quiet footer action.
   if (parsed.canonCard && typeof parsed.canonCard === 'object') {
     options = [...options, { ...decorate(parsed.canonCard), id: 'canon', isCanon: true }];
   }
+
   options = [...options, ...declined];
   buildPathDefault = (parsed.buildPath && (parsed.buildPath.value === 'comp' || parsed.buildPath.value === 'code'))
     ? { value: parsed.buildPath.value, toggle: parsed.buildPath.toggle === true }
     : null;
   liveBuildPath = buildPathDefault?.value ?? null;
 }
-try { loadRound(raw); } catch (error) { console.error(`serve-question: ${error.message}`); process.exit(1); }
+
+try {
+ loadRound(raw); 
+} catch (error) {
+ console.error(`serve-question: ${error.message}`); process.exit(1); 
+}
+
 const detachedKey = hasFlag('detached-serve') ? arg('key') : null;
 const nextFile = () => detachedKey ? path.join(QUESTION_DIR, `${detachedKey}.next.json`) : null;
 
@@ -428,15 +552,25 @@ function page() {
   const hasBack = (option) => hasMedia(option) && Boolean(option.viewport || option.case || (option.boardSrc && option.heroSrc));
   const anatomy = (option) => {
     const rows = [];
-    if (option.thesis) rows.push(`<p class="thesis">${esc(option.thesis)}</p>`);
+
+    if (option.thesis) {
+rows.push(`<p class="thesis">${esc(option.thesis)}</p>`);
+}
+
     const idBits = [];
+
     if (Array.isArray(option.palette) && option.palette.length) {
       idBits.push(`<span class="swatches">${option.palette.slice(0, 6).map((c) => `<i style="background:${esc(c)}" title="${esc(c)}"></i>`).join('')}</span>`);
     }
+
     if (Array.isArray(option.materials) && option.materials.length) {
       idBits.push(option.materials.slice(0, 4).map((m) => `<span class="tag">${esc(m)}</span>`).join(''));
     }
-    if (idBits.length) rows.push(`<div class="identity">${idBits.join('')}</div>`);
+
+    if (idBits.length) {
+rows.push(`<div class="identity">${idBits.join('')}</div>`);
+}
+
     // Donations from declined challengers render as named raise lines: the
     // assigned card arrives already raised by the hand it beat, and the raise
     // is readable, because a raise nobody can read did not happen. One raise
@@ -446,6 +580,7 @@ function page() {
       const nameOf = (id) => options.find((o) => o.id === id)?.label || String(id ?? '');
       const raiseLines = option.raised.slice(0, 6).map((r) => `<p class="raise"><span class="fact-label">From ${esc(nameOf(r.from))}</span>${esc(r.raise || r.kept || '')}</p>`);
       const raisesHead = (count) => `<div class="raises-head"><span class="fact-label">Improved by Impeccable's worlds</span>${count > 1 ? `<span class="raises-count" data-raises-count>1/${count}</span>` : ''}</div>`;
+
       if (raiseLines.length > 1) {
         rows.push(`<div class="raises raises-cycle" role="button" tabindex="0" title="Click or press Enter for the next improvement" aria-label="How Impeccable's worlds improved this direction; activate to see the next improvement">
               ${raisesHead(raiseLines.length)}
@@ -456,12 +591,14 @@ function page() {
         rows.push(`<div class="raises">${raisesHead(1)}${raiseLines[0]}</div>`);
       }
     }
+
     // Demoted art stays reachable as a labeled thumb: the catalog world
     // explains where the direction comes from without buying it back the
     // salience the verdict took away.
     if (thumbOnly(option)) {
       rows.push(`<figure class="inspo" title="Inspiration: the world this direction draws from. Your page will not look like this image."><img src="${esc(option.heroSrc || option.boardSrc)}" alt=""><figcaption>inspired by</figcaption></figure>`);
     }
+
     // The front carries only what the choice needs: thesis, identity, and the
     // honest risk clamped to two lines. First viewport and the case read on
     // the card's back; once the comp lands, the first viewport is a picture.
@@ -475,8 +612,13 @@ function page() {
       rows.push(fact('Kept', option.kept));
       rows.push(fact('Risk', option.risk));
     }
-    if (!option.thesis && option.body) rows.push(`<p class="detail">${esc(option.body)}</p>`);
-    else if (option.body && option.thesis && !hasBack(option)) rows.push(`<p class="detail more">${esc(option.body)}</p>`);
+
+    if (!option.thesis && option.body) {
+rows.push(`<p class="detail">${esc(option.body)}</p>`);
+} else if (option.body && option.thesis && !hasBack(option)) {
+rows.push(`<p class="detail more">${esc(option.body)}</p>`);
+}
+
     return rows.join('\n            ');
   };
   const backFacts = (option) => [
@@ -493,11 +635,16 @@ function page() {
               <figcaption>inspiration</figcaption>
             </figure>` : '';
     const details = hasBack(option) ? flipChip('Details') : '';
+
     // Thumb-only art renders inside the body via anatomy(), never as a face,
     // and a declined card's comp slot is ignored outright.
-    if (thumbOnly(option)) return '';
+    if (thumbOnly(option)) {
+return '';
+}
+
     if (faceComp(option)) {
       const textOnlyFacts = backFacts(option);
+
       return `<div class="media comp-pending" data-comp="${esc(option.compSrc)}">
             <div class="shimmer"><span class="comp-note">rendering&hellip;</span></div>
             <img class="comp" alt="" hidden>
@@ -506,6 +653,7 @@ function page() {
             <div class="chips">${expandChip}${details}</div>
           </div>`;
     }
+
     if (option.heroSrc || option.boardSrc) {
       // Without a comp the catalog art is the card's face; it stays a
       // labeled reference so it never reads as the promise of the build.
@@ -515,6 +663,7 @@ function page() {
             <div class="chips">${expandChip}${details}</div>
           </div>`;
     }
+
     return '';
   };
   // Wireframe media: a code-led card's layout schematic, authored as grid
@@ -524,7 +673,11 @@ function page() {
   // front, exactly like a text-only card.
   const wire = (option) => {
     const frame = option.wireframe;
-    if (!frame || !Array.isArray(frame.regions) || !frame.regions.length || media(option) || demoted(option)) return '';
+
+    if (!frame || !Array.isArray(frame.regions) || !frame.regions.length || media(option) || demoted(option)) {
+return '';
+}
+
     const cols = Number(frame.cols) > 0 ? Number(frame.cols) : 12;
     const rows = Number(frame.rows) > 0 ? Number(frame.rows) : 10;
     const pct = (n, total) => `${Math.max(0, Math.min(100, (n / total) * 100)).toFixed(2)}%`;
@@ -533,8 +686,10 @@ function page() {
       const y = Number(region.y) || 0;
       const w = Math.max(Number(region.w) || 1, 0.5);
       const h = Math.max(Number(region.h) || 1, 0.5);
+
       return `<div class="wire-region${region.accent ? ' accent' : ''}" style="left:${pct(x, cols)};top:${pct(y, rows)};width:${pct(w, cols)};height:${pct(h, rows)}"><span>${esc(region.label || '')}</span></div>`;
     }).join('');
+
     return `<div class="media wire" role="img" aria-label="Layout schematic">
             <div class="wire-field">${cells}</div>
             <p class="media-label">layout</p>
@@ -567,6 +722,7 @@ function page() {
         </div>` : ''}
       </div>
     </article>`).join('\n');
+
   return `<!doctype html>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(payload.title || 'impeccable · decision')}</title>
@@ -924,7 +1080,10 @@ ${buildPath?.toggle ? `<div id="bp-confirm" role="dialog" aria-modal="true" aria
 <footer>
   ${payload.steer ? '<input id="steer" placeholder="Optional steer: what should be different or kept?">' : ''}
   ${(() => {
-    if (!payload.reroll) return '';
+    if (!payload.reroll) {
+return '';
+}
+
     const die = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="8.4" cy="8.4" r="1.5" fill="currentColor"/><circle cx="15.6" cy="8.4" r="1.5" fill="currentColor"/><circle cx="8.4" cy="15.6" r="1.5" fill="currentColor"/><circle cx="15.6" cy="15.6" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>';
     const registers = Array.isArray(payload.reroll.registers) ? payload.reroll.registers.filter((r) => r === 'safer' || r === 'bolder') : [];
     // The registers are the user's steering wheel on the familiar-to-bold
@@ -932,6 +1091,7 @@ ${buildPath?.toggle ? `<div id="bp-confirm" role="dialog" aria-modal="true" aria
     // the axis it names.
     const safer = registers.includes('safer') ? '<button class="reroll-btn" id="reroll-safer" title="Deal the familiar register: conventional grounded directions plus the category standard against named competitors"><span>&larr; Safer hand</span></button>' : '';
     const bolder = registers.includes('bolder') ? '<button class="reroll-btn" id="reroll-bolder" title="Deal foreign forms only, at full commitment"><span>Bolder hand &rarr;</span></button>' : '';
+
     return `${safer}<button class="reroll-btn" id="reroll">${die}<span>Re-roll</span></button>${bolder}`;
   })()}
   ${payload.canon && !payload.canonCard ? '<button id="canon" title="Skip the roll: build the page this category ships, executed impeccably">Play it straight</button>' : ''}
@@ -1418,19 +1578,28 @@ ${buildPath?.toggle ? `<div id="bp-confirm" role="dialog" aria-modal="true" aria
 const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/') {
     const pending = nextFile();
+
     if (pending && fs.existsSync(pending)) {
-      try { loadRound(fs.readFileSync(pending, 'utf8')); fs.rmSync(pending); } catch { /* keep current round */ }
+      try {
+ loadRound(fs.readFileSync(pending, 'utf8')); fs.rmSync(pending); 
+} catch { /* keep current round */ }
     }
+
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     res.end(page());
+
     return;
   }
+
   if (req.method === 'POST' && req.url === '/heartbeat') {
     res.writeHead(204); res.end();
+
     if (detachedKey) {
       const now = Date.now();
+
       if (!server.lastBeatWrite || now - server.lastBeatWrite > 4000) {
         server.lastBeatWrite = now;
+
         try {
           const state = JSON.parse(fs.readFileSync(stateFile(detachedKey), 'utf8'));
           state.lastBeat = now;
@@ -1438,18 +1607,29 @@ const server = http.createServer((req, res) => {
         } catch { /* state file recreated on next beat */ }
       }
     }
+
     return;
   }
+
   if (req.method === 'GET' && req.url === '/next-status') {
     const pending = nextFile();
     res.writeHead(200, { 'content-type': 'application/json' });
     res.end(JSON.stringify({ ready: Boolean(pending && fs.existsSync(pending)) }));
+
     return;
   }
+
   const imageMatch = req.method === 'GET' && req.url?.match(/^\/img\/(\d+)(?:\?.*)?$/);
+
   if (imageMatch) {
     const abs = localImages[Number(imageMatch[1])];
-    if (!abs || !fs.existsSync(abs)) { res.writeHead(404); res.end(); return; }
+
+    if (!abs || !fs.existsSync(abs)) {
+ res.writeHead(404); res.end();
+
+ return; 
+}
+
     const type = abs.endsWith('.webp') ? 'image/webp'
       : abs.endsWith('.png') ? 'image/png'
       : abs.endsWith('.svg') ? 'image/svg+xml'
@@ -1457,19 +1637,31 @@ const server = http.createServer((req, res) => {
       : 'image/jpeg';
     res.writeHead(200, { 'content-type': type });
     fs.createReadStream(abs).pipe(res);
+
     return;
   }
+
   if (req.method === 'POST' && req.url === '/build-path') {
     let body = '';
-    req.on('data', (chunk) => { body += chunk; });
+    req.on('data', (chunk) => {
+ body += chunk; 
+});
     req.on('end', () => {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end('{"ok":true}');
       let value = null;
-      try { value = JSON.parse(body).value; } catch { /* ignore */ }
-      if (value !== 'comp' && value !== 'code') return;
+
+      try {
+ value = JSON.parse(body).value; 
+} catch { /* ignore */ }
+
+      if (value !== 'comp' && value !== 'code') {
+return;
+}
+
       const wasComp = liveBuildPath === 'comp';
       liveBuildPath = value;
+
       // Only a flip TO comp needs the agent mid-round: comps must start
       // rendering into the declared slots. The reverse is free.
       if (detachedKey && value === 'comp' && !wasComp) {
@@ -1477,16 +1669,24 @@ const server = http.createServer((req, res) => {
         fs.writeFileSync(flipFile(detachedKey), JSON.stringify({ buildPath: 'comp' }) + '\n');
       }
     });
+
     return;
   }
+
   if (req.method === 'POST' && req.url === '/answer') {
     let body = '';
-    req.on('data', (chunk) => { body += chunk; });
+    req.on('data', (chunk) => {
+ body += chunk; 
+});
     req.on('end', () => {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end('{"ok":true}');
       let parsed = {};
-      try { parsed = JSON.parse(body); } catch { /* empty steer */ }
+
+      try {
+ parsed = JSON.parse(body); 
+} catch { /* empty steer */ }
+
       const chosen = options.find((o) => o.id === parsed.optionId);
       const isReroll = parsed.optionId === 'reroll';
       // A followup round's pick is not terminal: the table stays open for the
@@ -1502,25 +1702,32 @@ const server = http.createServer((req, res) => {
         ...((chosen?.comp ?? chosen?.sketch) ? { comp: chosen.comp ?? chosen.sketch } : {}),
         ...(liveBuildPath && !isReroll ? { buildPath: liveBuildPath, buildPathFlipped: liveBuildPath !== (buildPathDefault?.value ?? null) } : {}),
       });
+
       if (detachedKey) {
         fs.mkdirSync(QUESTION_DIR, { recursive: true });
         fs.writeFileSync(answerFile(detachedKey), answer + '\n');
       } else {
         printAnswer(answer);
       }
+
       // A re-roll or followup pick in detached mode keeps the table open: the
       // client shows a loading hand and reloads when --update delivers the
       // next round.
-      if (!((isReroll || followupOpen) && detachedKey)) setTimeout(() => process.exit(0), 150);
+      if (!((isReroll || followupOpen) && detachedKey)) {
+setTimeout(() => process.exit(0), 150);
+}
     });
+
     return;
   }
+
   res.writeHead(404); res.end();
 });
 
 server.listen(portArg, '127.0.0.1', () => {
   const { port } = server.address();
   const url = `http://127.0.0.1:${port}/`;
+
   if (hasFlag('detached-serve')) {
     fs.mkdirSync(QUESTION_DIR, { recursive: true });
     fs.writeFileSync(stateFile(arg('key')), JSON.stringify({ pid: process.pid, port, url }));
@@ -1528,9 +1735,11 @@ server.listen(portArg, '127.0.0.1', () => {
     console.log(`QUESTION URL: ${url}`);
     console.log('Waiting for the user to choose in the browser (Ctrl-C aborts)...');
   }
+
   if (!hasFlag('no-open')) {
     openSystemBrowser(url);
   }
+
   if (timeoutSec > 0) {
     setTimeout(() => {
       console.log('serve-question: timed out with no answer');

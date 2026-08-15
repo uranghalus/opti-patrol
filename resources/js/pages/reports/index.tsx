@@ -38,6 +38,7 @@ export default function Reports() {
             <div className="space-y-3">
                 {reportTypes.map((item) => {
                     const Icon = item.icon;
+
                     return (
                         <Link
                             key={item.href}

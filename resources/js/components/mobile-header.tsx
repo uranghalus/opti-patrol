@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Link } from '@inertiajs/react';
 import {
     DatabaseZap,
@@ -9,6 +8,7 @@ import {
     UserCog2,
     X,
 } from 'lucide-react';
+import { useState } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
 

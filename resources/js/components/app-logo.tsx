@@ -1,5 +1,5 @@
-import { ShieldCheck } from 'lucide-react';
 import { Link, usePage } from '@inertiajs/react';
+import { ShieldCheck } from 'lucide-react';
 import { dashboard } from '@/routes';
 
 export default function AppLogo() {

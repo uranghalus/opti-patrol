@@ -2,8 +2,8 @@ import { Head } from '@inertiajs/react';
 import { Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -13,26 +13,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 import { aparJenisApar, aparSizes } from '@/types';
-
-interface Apar {
-    id: number;
-    kode_apar: string;
-    lantai: string | null;
-    lokasi: string;
-    jenis: string;
-    size: number;
-    user_id: number | null;
-    created_at: string;
-    updated_at: string;
-    user?: {
-        id: number;
-        name: string;
-        email: string;
-    };
-}
+import { Textarea } from '@/components/ui/textarea';
 
 interface Props {
     users: { id: number; name: string }[];

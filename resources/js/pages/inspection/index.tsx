@@ -41,6 +41,7 @@ export default function Inspeksi() {
             <div className="space-y-3">
                 {inspectionTypes.map((item) => {
                     const Icon = item.icon;
+
                     return (
                         <Link
                             key={item.href}

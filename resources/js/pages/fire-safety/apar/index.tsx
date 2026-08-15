@@ -1,13 +1,10 @@
 import { Head } from '@inertiajs/react';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
 import { Plus, Search, Filter, ChevronDown, Download, QrCode } from 'lucide-react';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,7 +12,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Apar } from '@/types';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
+import type { Apar } from '@/types';
 
 interface Props {
     apar: {
@@ -50,11 +50,26 @@ export default function AparIndex({ apar, filters, filterOptions }: Props) {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         const params = new URLSearchParams();
-        if (search) params.set('search', search);
-        if (jenis) params.set('jenis', jenis);
-        if (lantai) params.set('lantai', lantai);
-        if (size) params.set('size', size);
-        window.location.href = `/apar?${params.toString()}`;
+
+        if (search) {
+            params.set('search', search);
+        }
+
+        if (jenis) {
+            params.set('jenis', jenis);
+        }
+
+        if (lantai) {
+            params.set('lantai', lantai);
+        }
+
+        if (size) {
+            params.set('size', size);
+        }
+
+        router.get(`/apar?${params.toString()}`, {
+            preserveScroll: true,
+        });
     };
 
     const clearFilters = () => {
@@ -62,7 +77,9 @@ export default function AparIndex({ apar, filters, filterOptions }: Props) {
         setJenis('');
         setLantai('');
         setSize('');
-        window.location.href = '/apar';
+        router.get('/apar', {
+            preserveScroll: true,
+        });
     };
 
     const hasActiveFilters = search || jenis || lantai || size;
@@ -74,6 +91,14 @@ export default function AparIndex({ apar, filters, filterOptions }: Props) {
             case 'Foam': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
             case 'Air': return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400';
             default: return 'bg-muted text-muted-foreground';
+        }
+    };
+
+    const handleDelete = (id: number, kodeApar: string) => {
+        if (confirm(`Hapus APAR ${kodeApar}?`)) {
+            router.delete(`/apar/${id}`, {
+                preserveScroll: true,
+            });
         }
     };
 
@@ -144,11 +169,7 @@ export default function AparIndex({ apar, filters, filterOptions }: Props) {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
-                                onClick={() => {
-                                    if (confirm(`Hapus APAR ${item.kode_apar}?`)) {
-                                        document.getElementById(`delete-form-${item.id}`)?.requestSubmit();
-                                    }
-                                }}
+                                onClick={() => handleDelete(item.id, item.kode_apar)}
                             >
                                 <svg className="mr-2 size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                     <polyline points="3 6 5 6 21 6" />
@@ -158,10 +179,6 @@ export default function AparIndex({ apar, filters, filterOptions }: Props) {
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <form id={`delete-form-${item.id}`} action={`/apar/${item.id}`} method="POST" className="hidden">
-                        <input type="hidden" name="_method" value="DELETE" />
-                        <input type="hidden" name="_token" value={usePage().props.csrf_token} />
-                    </form>
                 </td>
             </tr>
         ));
@@ -185,7 +202,7 @@ export default function AparIndex({ apar, filters, filterOptions }: Props) {
                                 Import Excel
                             </Button>
                         </Link>
-                        <Link href="/apar/create">
+                        <Link href="/fire-safety/apar/create">
                             <Button className="gap-2">
                                 <Plus className="size-4" />
                                 Tambah APAR

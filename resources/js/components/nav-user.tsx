@@ -1,4 +1,5 @@
 import { usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { ChevronsUpDown, LogOut, Settings } from 'lucide-react';
 import {
     DropdownMenu,
@@ -8,12 +9,13 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
-import { Link } from '@inertiajs/react';
 
 export function NavUser() {
     const { auth } = usePage().props;
 
-    if (!auth.user) return null;
+    if (!auth.user) {
+return null;
+}
 
     return (
         <DropdownMenu>

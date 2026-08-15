@@ -30,6 +30,7 @@ export function MobileTabBar() {
             {mainTabs.map((tab) => {
                 const active = isCurrentUrl(tab.href);
                 const Icon = tab.icon;
+
                 return (
                     <Link
                         key={tab.label}

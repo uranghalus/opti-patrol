@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Imports\AparImport;
 use App\Models\Apar;
+use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Barryvdh\Snappy\Facades\SnappyPdf;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
@@ -14,12 +14,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
+// third party
 use Inertia\Inertia;
 use Intervention\Image\Laravel\Facades\Image;
-use Maatwebsite\Excel\Facades\Excel;
-// third party
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AparController extends Controller implements HasMiddleware
 {
@@ -35,7 +33,6 @@ class AparController extends Controller implements HasMiddleware
         ];
     }
 
-
     /**
      * Display a listing of the resource.
      */
@@ -48,8 +45,8 @@ class AparController extends Controller implements HasMiddleware
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('kode_apar', 'like', "%{$search}%")
-                  ->orWhere('lokasi', 'like', "%{$search}%")
-                  ->orWhere('lantai', 'like', "%{$search}%");
+                    ->orWhere('lokasi', 'like', "%{$search}%")
+                    ->orWhere('lantai', 'like', "%{$search}%");
             });
         }
 
@@ -83,7 +80,7 @@ class AparController extends Controller implements HasMiddleware
      */
     public function create()
     {
-        $users = \App\Models\User::with('karyawan')
+        $users = User::with('karyawan')
             ->whereHas('karyawan')
             ->get(['id', 'name', 'email'])
             ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]);
@@ -111,16 +108,18 @@ class AparController extends Controller implements HasMiddleware
 
         return redirect()->route('apar.index')->with('success', 'APAR berhasil ditambahkan.');
     }
+
     // Cetak QR Code
     /**
      * Generate a QR code for the specified APAR and return it as a PDF.
-     * @param int $id
-     * @return \Illuminate\Http\Response
+     *
+     * @param  int  $id
+     * @return Response
      */
     public function generateQRCode($id)
     {
         $apar = Apar::findOrFail($id);
-        $url = url('/inspection/apar-inspeksi/' . $apar->id);
+        $url = url('/inspection/apar-inspeksi/'.$apar->id);
 
         // Generate QR code binary PNG
         $qrCode = QrCode::format('png')
@@ -140,7 +139,7 @@ class AparController extends Controller implements HasMiddleware
 
         // Convert to base64
         $encoded = (string) $canvas->toJpeg(); // or toPng()
-        $base64 = 'data:image/jpeg;base64,' . base64_encode($encoded);
+        $base64 = 'data:image/jpeg;base64,'.base64_encode($encoded);
 
         // Generate PDF from Blade
         $pdf = Pdf::loadView('apar.qrcode', [
@@ -150,6 +149,7 @@ class AparController extends Controller implements HasMiddleware
 
         return $pdf->download("qr_apar_{$apar->kode_apar}.pdf");
     }
+
     // generate Mass QR Code
     public function generateMassQRCode(Request $request)
     {
@@ -165,14 +165,14 @@ class AparController extends Controller implements HasMiddleware
             ->get();
 
         $apars = $apars->map(function ($apar) {
-            $filename = 'qrcodes/qr-' . $apar->kode_apar . '.png';
-            $storagePath = storage_path('app/public/' . $filename);
+            $filename = 'qrcodes/qr-'.$apar->kode_apar.'.png';
+            $storagePath = storage_path('app/public/'.$filename);
 
             // Generate hanya jika belum ada
-            if (!file_exists($storagePath)) {
+            if (! file_exists($storagePath)) {
                 $qr = QrCode::format('png')
                     ->size(150)
-                    ->generate(url('/inspection/apar-inspeksi/' . $apar->id));
+                    ->generate(url('/inspection/apar-inspeksi/'.$apar->id));
                 Storage::disk('public')->put($filename, $qr);
             }
 
@@ -180,27 +180,28 @@ class AparController extends Controller implements HasMiddleware
                 'kode_apar' => $apar->kode_apar,
                 'lantai' => $apar->lantai,
                 'lokasi' => $apar->lokasi,
-                'qr_base64' => 'data:image/png;base64,' . base64_encode(file_get_contents($storagePath)),
+                'qr_base64' => 'data:image/png;base64,'.base64_encode(file_get_contents($storagePath)),
             ];
         });
 
         $html = View::make('apar.qrexports_pdf', [
             'apars' => $apars,
             'batch' => $batch,
-            'lantai' => $request->get('lantai') // Tambahkan ini
+            'lantai' => $request->get('lantai'), // Tambahkan ini
         ])->render();
 
         $pdf = Pdf::loadHTML($html)->setPaper('a4', 'portrait');
 
-        return $pdf->download('qr-code-apar-batch-' . $batch . '.pdf');
+        return $pdf->download('qr-code-apar-batch-'.$batch.'.pdf');
     }
+
     /**
      * Show the form for editing the specified resource.
      */
     public function edit($id)
     {
         $apar = Apar::findOrFail($id);
-        $users = \App\Models\User::with('karyawan')
+        $users = User::with('karyawan')
             ->whereHas('karyawan')
             ->get(['id', 'name', 'email'])
             ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name]);
@@ -210,6 +211,7 @@ class AparController extends Controller implements HasMiddleware
             'users' => $users,
         ]);
     }
+
     /**
      * Update the specified resource in storage.
      */
@@ -217,11 +219,11 @@ class AparController extends Controller implements HasMiddleware
     {
         //
         $apar = Apar::findOrFail($id);
-        if (!$apar) {
+        if (! $apar) {
             return redirect()->back()->with('error', 'Data not found.');
         }
         $validated = $request->validate([
-            'kode_apar' => 'required|string|max:255|unique:apar,kode_apar,' . $apar->id,
+            'kode_apar' => 'required|string|max:255|unique:apar,kode_apar,'.$apar->id,
             'lokasi' => 'required|string|max:255',
             'jenis' => 'required|in:CO2,Powder,Foam,Air',
             'size' => 'required|in:2,4,6,9',
@@ -232,10 +234,12 @@ class AparController extends Controller implements HasMiddleware
 
         return redirect()->route('apar.index')->with('success', 'APAR berhasil diperbarui.');
     }
+
     public function showUploadForm()
     {
         return Inertia::render('fire-safety/apar/UploadExcel');
     }
+
     public function import(Request $request)
     {
         $apars = $request->input('data', []);
@@ -250,6 +254,7 @@ class AparController extends Controller implements HasMiddleware
 
         if ($validator->fails()) {
             Log::error('APAR import validation failed', $validator->errors()->toArray());
+
             return back()->withErrors($validator)->withInput();
         }
 
@@ -280,8 +285,9 @@ class AparController extends Controller implements HasMiddleware
 
             return redirect()->route('apar.index')->with('success', $message);
         } catch (\Exception $e) {
-            Log::error('APAR import failed: ' . $e->getMessage());
-            return back()->with('error', 'Terjadi kesalahan saat mengimpor data APAR: ' . $e->getMessage());
+            Log::error('APAR import failed: '.$e->getMessage());
+
+            return back()->with('error', 'Terjadi kesalahan saat mengimpor data APAR: '.$e->getMessage());
         }
     }
 
@@ -313,6 +319,7 @@ class AparController extends Controller implements HasMiddleware
             'totalBatch' => $totalBatch,
         ]);
     }
+
     /**
      * Remove the specified resource from storage.
      */

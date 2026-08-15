@@ -67,6 +67,7 @@ function DropdownNav({ item }: { item: NavItem }) {
             }
         };
         document.addEventListener('mousedown', handler);
+
         return () => document.removeEventListener('mousedown', handler);
     }, []);
 
