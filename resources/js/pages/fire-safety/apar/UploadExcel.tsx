@@ -1,6 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Upload, FileSpreadsheet, AlertCircle, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Upload, FileSpreadsheet, AlertCircle, CheckCircle, Download } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -66,7 +66,7 @@ export default function AparUploadExcel({}: Props) {
             // In a real app, you might want to send to backend for parsing
             const text = await file.text();
             const lines = text.split('\n').filter(line => line.trim());
-            
+
             if (lines.length < 2) {
                 alert('File kosong atau tidak memiliki data');
                 return;
@@ -76,7 +76,7 @@ export default function AparUploadExcel({}: Props) {
             const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
             const requiredHeaders = ['kode_apar', 'lokasi', 'jenis', 'size'];
             const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-            
+
             if (missingHeaders.length > 0) {
                 alert(`Header yang hilang: ${missingHeaders.join(', ')}`);
                 return;
@@ -90,7 +90,7 @@ export default function AparUploadExcel({}: Props) {
                     headers.forEach((header, index) => {
                         row[header] = values[index] || '';
                     });
-                    
+
                     parsedData.push({
                         kode_apar: row.kode_apar || '',
                         lantai: row.lantai || '',
@@ -111,7 +111,7 @@ export default function AparUploadExcel({}: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         if (!file) {
             alert('Pilih file terlebih dahulu');
             return;
@@ -121,8 +121,8 @@ export default function AparUploadExcel({}: Props) {
         const reader = new FileReader();
         reader.onload = (event) => {
             const base64 = event.target?.result as string;
-            
-            post('/apar/import', {
+
+            post('/fire-safety/apar/import', {
                 data: {
                     data: previewData.length > 0 ? previewData : [],
                     file: base64,
@@ -159,26 +159,33 @@ export default function AparUploadExcel({}: Props) {
         <>
             <Head title="Import APAR Excel" />
 
-            <div className="space-y-6 max-w-3xl">
+            <div className="space-y-6 animate-in fade-in slide-in-from-y-4 duration-400 max-w-3xl">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <Link href="/apar" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4">
+                        <Link
+                            href="/fire-safety/apar"
+                            className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
                             <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                 <path d="M19 12H5" />
                                 <path d="M12 19l-7-7 7-7" />
                             </svg>
-                            Kembali
+                            Kembali ke daftar
                         </Link>
-                        <h1 className="text-xl font-bold text-foreground">Import Data APAR</h1>
-                        <p className="text-sm text-muted-foreground/50">Upload file Excel/CSV untuk menambah data APAR secara massal</p>
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                            Import Data APAR
+                        </h1>
+                        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                            Upload file Excel/CSV untuk menambah data APAR secara massal
+                        </p>
                     </div>
-                </div>
+                </header>
 
                 {/* Instructions Card */}
-                <Card>
+                <Card className="neu-card border-0 bg-transparent shadow-none animate-in fade-in slide-in-from-y-4 duration-400">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-lg">
                             <FileSpreadsheet className="size-5 text-primary" />
                             Format File & Instruksi
                         </CardTitle>
@@ -186,24 +193,24 @@ export default function AparUploadExcel({}: Props) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
+                            <div className="space-y-2 p-4 neu-card bg-muted/30 border-border/50 rounded-lg">
                                 <h4 className="font-medium text-sm">Kolom Wajib</h4>
                                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                                    <li><code>kode_apar</code> - Kode unik APAR (max 25 karakter)</li>
-                                    <li><code>lokasi</code> - Lokasi penempatan APAR</li>
-                                    <li><code>jenis</code> - CO2, Powder, Foam, atau Air</li>
-                                    <li><code>size</code> - Ukuran: 2, 4, 6, atau 9 (kg)</li>
+                                    <li><code className="px-1.5 py-0.5 bg-muted/50 rounded text-xs font-mono">kode_apar</code> - Kode unik APAR (max 25 karakter)</li>
+                                    <li><code className="px-1.5 py-0.5 bg-muted/50 rounded text-xs font-mono">lokasi</code> - Lokasi penempatan APAR</li>
+                                    <li><code className="px-1.5 py-0.5 bg-muted/50 rounded text-xs font-mono">jenis</code> - CO2, Powder, Foam, atau Air</li>
+                                    <li><code className="px-1.5 py-0.5 bg-muted/50 rounded text-xs font-mono">size</code> - Ukuran: 2, 4, 6, atau 9 (kg)</li>
                                 </ul>
                             </div>
-                            <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
+                            <div className="space-y-2 p-4 neu-card bg-muted/30 border-border/50 rounded-lg">
                                 <h4 className="font-medium text-sm">Kolom Opsional</h4>
                                 <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                                    <li><code>lantai</code> - Lantai/area (contoh: Lantai 1, Basement)</li>
+                                    <li><code className="px-1.5 py-0.5 bg-muted/50 rounded text-xs font-mono">lantai</code> - Lantai/area (contoh: Lantai 1, Basement)</li>
                                 </ul>
                             </div>
                         </div>
 
-                        <div className="space-y-2 p-4 bg-amber-50/50 border border-amber-200/50 rounded-lg">
+                        <div className="space-y-2 p-4 neu-card bg-amber-50/50 border border-amber-200/50 rounded-lg">
                             <h4 className="font-medium text-sm text-amber-800">Catatan Penting</h4>
                             <ul className="text-sm text-amber-700 space-y-1 list-disc list-inside">
                                 <li>File harus berformat <strong>.xlsx, .xls, atau .csv</strong></li>
@@ -215,7 +222,7 @@ export default function AparUploadExcel({}: Props) {
                         </div>
 
                         <div className="flex items-center gap-3 pt-2">
-                            <Button variant="outline" onClick={downloadTemplate} className="gap-2">
+                            <Button variant="outline" onClick={downloadTemplate} className="gap-2 neu-card border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
                                 <Download className="size-4" />
                                 Download Template CSV
                             </Button>
@@ -225,9 +232,9 @@ export default function AparUploadExcel({}: Props) {
                 </Card>
 
                 {/* Upload Form */}
-                <Card>
+                <Card className="neu-card border-0 bg-transparent shadow-none animate-in fade-in slide-in-from-y-4 duration-400 delay-100">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-lg">
                             <Upload className="size-5 text-primary" />
                             Upload File
                         </CardTitle>
@@ -252,10 +259,10 @@ export default function AparUploadExcel({}: Props) {
                                 <label
                                     htmlFor="file-upload"
                                     className={cn(
-                                        'flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-lg cursor-pointer transition-colors',
-                                        file 
-                                            ? 'border-green-500 bg-green-50/50' 
-                                            : 'border-border/50 hover:border-primary/50 hover:bg-primary/5'
+                                        'flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200',
+                                        file
+                                            ? 'border-green-500 bg-green-50/50'
+                                            : 'border-border/50 hover:border-primary/50 hover:bg-primary/5 neu-card'
                                     )}
                                 >
                                     {file ? (
@@ -278,17 +285,17 @@ export default function AparUploadExcel({}: Props) {
                                 </label>
                             </div>
                             {errors.data && (
-                                <p className="text-sm text-red-500" role="alert">{errors.data}</p>
+                                <p className="text-sm text-destructive" role="alert">{errors.data}</p>
                             )}
                         </div>
 
                         {file && (
-                            <div className="flex items-center gap-3">
+                            <div className="flex flex-col sm:flex-row items-center gap-3">
                                 <Button
                                     variant="outline"
                                     onClick={handlePreview}
                                     disabled={processing}
-                                    className="gap-2"
+                                    className="w-full sm:w-auto gap-2 neu-card border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200"
                                 >
                                     <FileSpreadsheet className="size-4" />
                                     Pratinjau Data
@@ -296,7 +303,7 @@ export default function AparUploadExcel({}: Props) {
                                 <Button
                                     onClick={handleSubmit}
                                     disabled={processing}
-                                    className="gap-2"
+                                    className="w-full sm:w-auto gap-2 neu-card bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
                                 >
                                     <Upload className="size-4" />
                                     {processing ? 'Mengimport...' : 'Import Data'}
@@ -306,12 +313,12 @@ export default function AparUploadExcel({}: Props) {
 
                         {/* Preview */}
                         {showPreview && previewData.length > 0 && (
-                            <div className="space-y-3 border-t pt-4">
+                            <div className="space-y-3 border-t border-border/50 pt-4 animate-in fade-in slide-in-from-y-2 duration-300">
                                 <h4 className="font-medium text-sm">Pratinjau Data (10 baris pertama)</h4>
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto neu-card border-border/50 rounded-xl">
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="bg-muted/50">
+                                            <tr className="bg-muted/50 border-b border-border/50">
                                                 <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Kode APAR</th>
                                                 <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Lantai</th>
                                                 <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Lokasi</th>
@@ -321,12 +328,12 @@ export default function AparUploadExcel({}: Props) {
                                         </thead>
                                         <tbody>
                                             {previewData.map((row, index) => (
-                                                <tr key={index} className="border-t border-border/50 hover:bg-muted/30">
+                                                <tr key={index} className="border-t border-border/50 hover:bg-muted/30 transition-colors">
                                                     <td className="px-3 py-2 font-mono">{row.kode_apar}</td>
                                                     <td className="px-3 py-2">{row.lantai || '-'}</td>
                                                     <td className="px-3 py-2 max-w-[200px] truncate">{row.lokasi}</td>
                                                     <td className="px-3 py-2">
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium neu-card bg-primary/10 text-primary border border-primary/20">
                                                             {row.jenis}
                                                         </span>
                                                     </td>
@@ -343,12 +350,23 @@ export default function AparUploadExcel({}: Props) {
                                 )}
                             </div>
                         )}
+
+                        <Link
+                            href="/fire-safety/apar"
+                            className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                            <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                <path d="M19 12H5" />
+                                <path d="M12 19l-7-7 7-7" />
+                            </svg>
+                            Kembali ke daftar
+                        </Link>
                     </CardContent>
                 </Card>
 
                 {/* Result Messages */}
                 {errors.data && (
-                    <Alert variant="destructive" className="border-destructive/50">
+                    <Alert variant="destructive" className="border-destructive/50 neu-card animate-in fade-in slide-in-from-y-2 duration-300">
                         <AlertCircle className="size-4" />
                         <AlertDescription>{errors.data}</AlertDescription>
                     </Alert>

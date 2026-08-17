@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CekPointSecurity;
+use App\Traits\GeneratesQrCode;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -11,10 +12,11 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
 use Inertia\Inertia;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class CekpointSecurityController extends Controller implements HasMiddleware
 {
+    use GeneratesQrCode;
+
     public static function middleware()
     {
         return [
@@ -26,11 +28,13 @@ class CekpointSecurityController extends Controller implements HasMiddleware
             new Middleware('permission:cekpoint-security.export', only: ['generateQRCode', 'generateMassQRCode']),
         ];
     }
+
     public function index()
     {
 
         //
         $cekPointSecurityData = CekPointSecurity::all();
+
         return Inertia::render('fire-safety/cekpoint-security/Index', [
             'cekPointSecurityData' => $cekPointSecurityData,
         ]);
@@ -44,14 +48,16 @@ class CekpointSecurityController extends Controller implements HasMiddleware
         //
         return Inertia::render('fire-safety/cekpoint-security/Create');
     }
+
     /**
      * Import View
-     * 
+     *
      * */
     public function showUploadForm()
     {
         return Inertia::render('fire-safety/cekpoint-security/ImportSecurity');
     }
+
     /**!SECTION
      * import functions
      */
@@ -78,6 +84,7 @@ class CekpointSecurityController extends Controller implements HasMiddleware
                 ]
             );
         }
+
         return redirect()->route('cekpoin-security.index')->with('success', 'Cek Point Security imported successfully.');
     }
 
@@ -91,6 +98,7 @@ class CekpointSecurityController extends Controller implements HasMiddleware
             'area' => 'nullable|string|max:255',
         ]);
         CekPointSecurity::create($request->all());
+
         return redirect()->route('cekpoint-security.index')->with('success', 'Cek Point Security created successfully.');
     }
 
@@ -100,6 +108,7 @@ class CekpointSecurityController extends Controller implements HasMiddleware
     public function show($id)
     {
         $cekPointSecurity = CekPointSecurity::findOrFail($id);
+
         return Inertia::render('fire-safety/cekpoint-security/Show', [
             'cekPointSecurity' => $cekPointSecurity,
         ]);
@@ -113,6 +122,7 @@ class CekpointSecurityController extends Controller implements HasMiddleware
     {
         //
         $cekPointSecurity = CekPointSecurity::findOrFail($id);
+
         return Inertia::render('fire-safety/cekpoint-security/Edit', [
             'cekPointSecurity' => $cekPointSecurity,
         ]);
@@ -125,13 +135,14 @@ class CekpointSecurityController extends Controller implements HasMiddleware
     {
         //
         $request->validate([
-            'kode_cekpoint' => 'required|string|max:255|unique:cek_point_security,kode_cekpoint,' . $id,
+            'kode_cekpoint' => 'required|string|max:255|unique:cek_point_security,kode_cekpoint,'.$id,
             'lokasi' => 'nullable|string|max:255',
             'lantai' => 'required|string|max:255',
             'area' => 'nullable|string|max:255',
         ]);
         $cekPointSecurity = CekPointSecurity::findOrFail($id);
         $cekPointSecurity->update($request->all());
+
         return redirect()->route('cekpoin-security.index')->with('success', 'Cek Point Security updated successfully.');
     }
 
@@ -142,11 +153,13 @@ class CekpointSecurityController extends Controller implements HasMiddleware
     {
         $cekPointSecurity = CekPointSecurity::findOrFail($id);
         $cekPointSecurity->delete();
+
         return redirect()->route('cekpoin-security.index')->with('success', 'Cek Point Security deleted successfully.');
     }
+
     /**
      * filter data dari request
-     * 
+     *
      * */
     public function getFilterOptions()
     {
@@ -155,12 +168,14 @@ class CekpointSecurityController extends Controller implements HasMiddleware
         $total = CekPointSecurity::count();
         $perPage = 30;
         $totalBatches = ceil($total / $perPage);
+
         return response()->json([
             'totalBatch' => $totalBatches,
             'lantai' => $lantaiList,
             'area' => $areaList,
         ]);
     }
+
     public function generateMassCekPointQRCode(Request $request)
     {
         ini_set('max_execution_time', 120);
@@ -172,8 +187,12 @@ class CekpointSecurityController extends Controller implements HasMiddleware
         $perPage = 30;
 
         $query = CekPointSecurity::query();
-        if ($lantai) $query->where('lantai', $lantai);
-        if ($area) $query->where('area', $area);
+        if ($lantai) {
+            $query->where('lantai', $lantai);
+        }
+        if ($area) {
+            $query->where('area', $area);
+        }
 
         $cekPoints = $query
             ->orderBy('id')
@@ -181,18 +200,16 @@ class CekpointSecurityController extends Controller implements HasMiddleware
             ->take($perPage)
             ->get();
 
-        if (!$batch || !is_numeric($batch) || $batch < 1 || $cekPoints->isEmpty()) {
+        if (! $batch || ! is_numeric($batch) || $batch < 1 || $cekPoints->isEmpty()) {
             abort(404, 'Data tidak valid untuk dicetak.');
         }
 
         // Generate QR untuk setiap checkpoint
         $cekPoints = $cekPoints->map(function ($cekPoint) {
-            $filename = 'qrcodes/cekpoint-qr-' . $cekPoint->kode_cekpoint . '.png';
-            $storagePath = storage_path('app/public/' . $filename);
+            $filename = 'qrcodes/cekpoint-qr-'.$cekPoint->kode_cekpoint.'.png';
+            $storagePath = storage_path('app/public/'.$filename);
 
-            $qr = QrCode::format('png')
-                ->size(150)
-                ->generate(url('/inspection/cekpoint-inspeksi/' . $cekPoint->id));
+            $qr = $this->qrPng(url('/inspection/cekpoint-inspeksi/'.$cekPoint->id), 150);
 
             Storage::disk('public')->put($filename, $qr);
 
@@ -201,7 +218,7 @@ class CekpointSecurityController extends Controller implements HasMiddleware
                 'lokasi' => $cekPoint->lokasi,
                 'lantai' => $cekPoint->lantai,
                 'area' => $cekPoint->area,
-                'qr_base64' => 'data:image/png;base64,' . base64_encode(file_get_contents($storagePath)),
+                'qr_base64' => 'data:image/png;base64,'.base64_encode(file_get_contents($storagePath)),
             ];
         });
 
@@ -210,11 +227,11 @@ class CekpointSecurityController extends Controller implements HasMiddleware
             'cekPoints' => $cekPoints,
             'batch' => $batch,
             'lantai' => $lantai,
-            'area' => $area
+            'area' => $area,
         ])->render();
 
         $pdf = Pdf::loadHTML($html)->setPaper('a4', 'portrait');
 
-        return $pdf->download('qr-code-cekpoint-batch-' . $batch . '.pdf');
+        return $pdf->download('qr-code-cekpoint-batch-'.$batch.'.pdf');
     }
 }

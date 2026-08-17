@@ -3,22 +3,23 @@
 namespace App\Http\Controllers;
 
 use App\Models\Hydrant;
+use App\Traits\GeneratesQrCode;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
+use Inertia\Inertia;
 use Intervention\Image\Laravel\Facades\Image;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-
 
 class HydrantController extends Controller implements HasMiddleware
 {
+    use GeneratesQrCode;
+
     public static function middleware()
     {
         return [
@@ -30,6 +31,7 @@ class HydrantController extends Controller implements HasMiddleware
             new Middleware('permission:hydrant.export', only: ['generateQRCode', 'generateMassHydrantQRCode']),
         ];
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -37,6 +39,7 @@ class HydrantController extends Controller implements HasMiddleware
     {
         //
         $hydrantdata = Hydrant::with('user.karyawan')->get();
+
         return Inertia::render('fire-safety/hydrant/index', [
             'hydrantdata' => $hydrantdata,
         ]);
@@ -45,12 +48,10 @@ class HydrantController extends Controller implements HasMiddleware
     public function HydrantQRCode($id)
     {
         $apar = Hydrant::findOrFail($id);
-        $url = url('/inspection/hydrant-inspeksi/' . $apar->id);
+        $url = url('/inspection/hydrant-inspeksi/'.$apar->id);
 
         // Generate QR code binary PNG
-        $qrCode = QrCode::format('png')
-            ->size(300)
-            ->generate($url);
+        $qrCode = $this->qrPng($url, 300);
 
         // Convert to stream
         $tempStream = fopen('php://memory', 'r+');
@@ -65,7 +66,7 @@ class HydrantController extends Controller implements HasMiddleware
 
         // Convert to base64
         $encoded = (string) $canvas->toJpeg(); // or toPng()
-        $base64 = 'data:image/jpeg;base64,' . base64_encode($encoded);
+        $base64 = 'data:image/jpeg;base64,'.base64_encode($encoded);
 
         // Generate PDF from Blade
         $pdf = Pdf::loadView('hydrant.qrcode', [
@@ -75,6 +76,7 @@ class HydrantController extends Controller implements HasMiddleware
 
         return $pdf->download("qr_apar_{$apar->kode_apar}.pdf");
     }
+
     public function generateMassHydrantQRCode(Request $request)
     {
         ini_set('max_execution_time', 120);
@@ -85,27 +87,26 @@ class HydrantController extends Controller implements HasMiddleware
         $perPage = 30;
 
         $query = Hydrant::query();
-        if ($lantai) $query->where('lantai', $lantai);
+        if ($lantai) {
+            $query->where('lantai', $lantai);
+        }
 
         $hydrants = $query
             ->orderBy('id')
             ->skip(($batch - 1) * $perPage)
             ->take($perPage)
             ->get();
-        if (!$batch || !is_numeric($batch) || $batch < 1 || $hydrants->isEmpty()) {
+        if (! $batch || ! is_numeric($batch) || $batch < 1 || $hydrants->isEmpty()) {
             abort(404, 'Data tidak valid untuk dicetak.');
         }
         // Hapus file QR lama dari hydrant dalam batch ini
 
-
         // Generate ulang semua QR code
         $hydrants = $hydrants->map(function ($hydrant) {
-            $filename = 'qrcodes/hydrant-qr-' . $hydrant->kode_unik . '.png';
-            $storagePath = storage_path('app/public/' . $filename);
+            $filename = 'qrcodes/hydrant-qr-'.$hydrant->kode_unik.'.png';
+            $storagePath = storage_path('app/public/'.$filename);
 
-            $qr = QrCode::format('png')
-                ->size(150)
-                ->generate(url('/inspection/hydrant-inspeksi/' . $hydrant->id));
+            $qr = $this->qrPng(url('/inspection/hydrant-inspeksi/'.$hydrant->id), 150);
 
             Storage::disk('public')->put($filename, $qr);
 
@@ -114,28 +115,29 @@ class HydrantController extends Controller implements HasMiddleware
                 'kode_hydrant' => $hydrant->kode_hydrant,
                 'lantai' => $hydrant->lantai,
                 'lokasi' => $hydrant->lokasi,
-                'qr_base64' => 'data:image/png;base64,' . base64_encode(file_get_contents($storagePath)),
+                'qr_base64' => 'data:image/png;base64,'.base64_encode(file_get_contents($storagePath)),
             ];
         });
 
         $html = View::make('hydrant.qrexports_pdf', [
             'hydrants' => $hydrants,
             'batch' => $batch,
-            'lantai' => $lantai
+            'lantai' => $lantai,
         ])->render();
 
         $pdf = Pdf::loadHTML($html)->setPaper('a4', 'portrait');
 
-        return $pdf->download('qr-code-hydrant-batch-' . $batch . '.pdf');
+        return $pdf->download('qr-code-hydrant-batch-'.$batch.'.pdf');
         foreach ($hydrants as $hydrant) {
-            $filename = 'qrcodes/hydrant-qr-' . $hydrant->kode_unik . '.png';
-            $storagePath = storage_path('app/public/' . $filename);
+            $filename = 'qrcodes/hydrant-qr-'.$hydrant->kode_unik.'.png';
+            $storagePath = storage_path('app/public/'.$filename);
 
             if (file_exists($storagePath)) {
                 unlink($storagePath);
             }
         }
     }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -165,8 +167,8 @@ class HydrantController extends Controller implements HasMiddleware
         $hydrant = Hydrant::findOrFail($id);
         //
         $validated = $request->validate([
-            'kode_unik' => 'required|string|max:255|unique:hydrant,kode_unik,' . $hydrant->id,
-            'kode_hydrant' => 'required|string|max:255|unique:hydrant,kode_hydrant,' . $hydrant->id,
+            'kode_unik' => 'required|string|max:255|unique:hydrant,kode_unik,'.$hydrant->id,
+            'kode_hydrant' => 'required|string|max:255|unique:hydrant,kode_hydrant,'.$hydrant->id,
             'tipe' => 'required|in:Indoor,Outdoor',
             'lokasi' => 'required|string|max:255',
             'user_id' => 'nullable|exists:users,id',
@@ -176,11 +178,11 @@ class HydrantController extends Controller implements HasMiddleware
 
         return redirect()->route('hydrant.index')->with('success', 'Hydrant berhasil diupdate.');
     }
+
     public function showUploadForm()
     {
         return Inertia::render('fire-safety/hydrant/UploadExcel');
     }
-
 
     public function import(Request $request)
     {
@@ -196,6 +198,7 @@ class HydrantController extends Controller implements HasMiddleware
 
         if ($validator->fails()) {
             Log::error('Import validation failed', $validator->errors()->toArray());
+
             return back()->withErrors($validator);
         }
 
@@ -214,6 +217,7 @@ class HydrantController extends Controller implements HasMiddleware
 
         return redirect()->route('hydrant.index')->with('success', 'Import berhasil!');
     }
+
     public function getFilterOptions()
     {
         $lantai = Hydrant::select('lantai')
@@ -231,6 +235,7 @@ class HydrantController extends Controller implements HasMiddleware
             'totalBatch' => $totalBatch,
         ]);
     }
+
     /**
      * Remove the specified resource from storage.
      */

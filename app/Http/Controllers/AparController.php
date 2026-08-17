@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Apar;
 use App\Models\User;
+use App\Traits\GeneratesQrCode;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -13,14 +14,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\View;
 // third party
+use Illuminate\Support\Facades\View;
 use Inertia\Inertia;
 use Intervention\Image\Laravel\Facades\Image;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class AparController extends Controller implements HasMiddleware
 {
+    use GeneratesQrCode;
+
     public static function middleware()
     {
         return [
@@ -122,9 +124,7 @@ class AparController extends Controller implements HasMiddleware
         $url = url('/inspection/apar-inspeksi/'.$apar->id);
 
         // Generate QR code binary PNG
-        $qrCode = QrCode::format('png')
-            ->size(300)
-            ->generate($url);
+        $qrCode = $this->qrPng($url, 300);
 
         // Convert to stream
         $tempStream = fopen('php://memory', 'r+');
@@ -170,9 +170,7 @@ class AparController extends Controller implements HasMiddleware
 
             // Generate hanya jika belum ada
             if (! file_exists($storagePath)) {
-                $qr = QrCode::format('png')
-                    ->size(150)
-                    ->generate(url('/inspection/apar-inspeksi/'.$apar->id));
+                $qr = $this->qrPng(url('/inspection/apar-inspeksi/'.$apar->id), 150);
                 Storage::disk('public')->put($filename, $qr);
             }
 

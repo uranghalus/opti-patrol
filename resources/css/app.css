@@ -649,6 +649,81 @@
         inset -1px -1px 3px rgba(255, 255, 255, 0.02);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   GLASS PANEL — elevated/floating surface (preview, overlay)
+   ═══════════════════════════════════════════════════════════ */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+    border-radius: 20px;
+}
+
+.dark .glass-panel {
+    background: rgba(20, 24, 32, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.30);
+}
+
+/* ─── Stage: busy gradient so glass has something to refract ─── */
+.preview-stage {
+    background:
+        radial-gradient(120% 120% at 100% 0%, rgba(135, 100, 191, 0.20), transparent 60%),
+        linear-gradient(135deg, rgba(38, 109, 211, 0.16), rgba(101, 104, 202, 0.10));
+    border-radius: 20px;
+}
+
+.dark .preview-stage {
+    background:
+        radial-gradient(120% 120% at 100% 0%, rgba(135, 100, 191, 0.22), transparent 60%),
+        linear-gradient(135deg, rgba(38, 109, 211, 0.22), rgba(101, 104, 202, 0.14));
+}
+
+/* ─── Soft primary button (tactile, soft-UI, 10px radius) ─── */
+.btn-soft-primary {
+    background: #266DD3; /* var(--primary) fallback */
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border-radius: 10px;
+    font-weight: 600;
+    transition:
+        color 200ms ease,
+        box-shadow 200ms ease,
+        transform 200ms ease,
+        background-color 200ms ease;
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.08),
+        0 4px 12px rgba(38, 109, 211, 0.15);
+}
+
+.btn-soft-primary:hover:not(:disabled) {
+    background: #1a5bb8; /* var(--primary) darker */
+    background: var(--primary);
+    filter: brightness(0.92);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(38, 109, 211, 0.28);
+}
+
+.btn-soft-primary:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.btn-soft-primary:disabled,
+.btn-soft-primary[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* ─── Info tip bubble ─── */
+.info-tip {
+    cursor: help;
+}
+
 /* ─── Animations ─── */
 @keyframes fadeIn {
     from { opacity: 0; }
@@ -658,4 +733,13 @@
 @keyframes slideRight {
     from { transform: translateX(-100%); }
     to { transform: translateX(0); }
+}
+
+@keyframes floatIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.float-in {
+    animation: floatIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
