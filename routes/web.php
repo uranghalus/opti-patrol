@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\OIDCController;
 use App\Http\Controllers\AparController;
+use App\Http\Controllers\HydrantController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/auth/redirect')->name('home');
@@ -19,6 +20,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/upload-excel', [AparController::class, 'showUploadForm'])->name('uploadExcel');
         Route::post('/import', [AparController::class, 'import'])->name('import');
         Route::get('/filter-options', [AparController::class, 'getFilterOptions'])->name('filterOptions');
+    });
+
+    // CRUD Data Hydrant
+    Route::prefix('fire-safety/hydrant')->name('hydrant.')->group(function () {
+        Route::resource('/', HydrantController::class)->except(['show']);
+        Route::get('/{id}/generate-qr', [HydrantController::class, 'HydrantQRCode'])->name('generateQRCode');
+        Route::get('/generate-mass-qr', [HydrantController::class, 'generateMassHydrantQRCode'])->name('generateMassQRCode');
+        Route::get('/upload-excel', [HydrantController::class, 'showUploadForm'])->name('uploadExcel');
+        Route::post('/import', [HydrantController::class, 'import'])->name('import');
+        Route::get('/filter-options', [HydrantController::class, 'getFilterOptions'])->name('filterOptions');
     });
 });
 Route::get('auth/redirect', [OIDCController::class, 'redirect'])->name('authsso');

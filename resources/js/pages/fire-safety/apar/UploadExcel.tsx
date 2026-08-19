@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
+import * as XLSX from 'xlsx';
 
 interface Props {
     // No props needed for upload form
@@ -16,18 +16,21 @@ interface Props {
 
 interface ImportRow {
     kode_apar: string;
-    lantai?: string;
+    lantai: string;
     lokasi: string;
     jenis: string;
-    size: number;
+    size: number | string;
 }
+
+const REQUIRED = ['kode_apar', 'lokasi', 'jenis', 'size'];
 
 export default function AparUploadExcel({}: Props) {
     const [file, setFile] = useState<File | null>(null);
     const [previewData, setPreviewData] = useState<ImportRow[]>([]);
+    const [invalidRows, setInvalidRows] = useState<number[]>([]);
     const [showPreview, setShowPreview] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { post, processing, errors, reset, setData } = useForm({
         data: [] as ImportRow[],
     });
 
@@ -35,19 +38,12 @@ export default function AparUploadExcel({}: Props) {
         const selectedFile = e.target.files?.[0];
         if (!selectedFile) return;
 
-        // Validate file type
-        const allowedTypes = [
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-            'application/vnd.ms-excel', // .xls
-            'text/csv', // .csv
-        ];
-
-        if (!allowedTypes.includes(selectedFile.type) && !selectedFile.name.match(/\.(xlsx|xls|csv)$/i)) {
+        const allowed = /\.(xlsx|xls|csv)$/i.test(selectedFile.name);
+        if (!allowed) {
             alert('Format file tidak didukung. Gunakan .xlsx, .xls, atau .csv');
             return;
         }
 
-        // Validate file size (max 5MB)
         if (selectedFile.size > 5 * 1024 * 1024) {
             alert('Ukuran file terlalu besar. Maksimal 5MB.');
             return;
@@ -56,98 +52,70 @@ export default function AparUploadExcel({}: Props) {
         setFile(selectedFile);
         setShowPreview(false);
         setPreviewData([]);
-    };
+        setInvalidRows([]);
 
-    const handlePreview = async () => {
-        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const arrayBuffer = evt.target?.result as ArrayBuffer;
+                const wb = XLSX.read(arrayBuffer, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows: Record<string, string>[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-        try {
-            // For preview, we'll read the file using FileReader
-            // In a real app, you might want to send to backend for parsing
-            const text = await file.text();
-            const lines = text.split('\n').filter(line => line.trim());
+                const invalid = rows
+                    .map((r, i) => (REQUIRED.every((k) => r[k]) ? -1 : i))
+                    .filter((i) => i !== -1);
 
-            if (lines.length < 2) {
-                alert('File kosong atau tidak memiliki data');
-                return;
+                const parsed: ImportRow[] = rows.map((r) => ({
+                    kode_apar: (r.kode_apar ?? '').trim(),
+                    lantai: (r.lantai ?? '').trim(),
+                    lokasi: (r.lokasi ?? '').trim(),
+                    jenis: (r.jenis ?? '').trim(),
+                    size: (r.size ?? '').trim(),
+                }));
+
+                setPreviewData(parsed);
+                setInvalidRows(invalid);
+                setShowPreview(true);
+            } catch (error) {
+                console.error('Error parsing file:', error);
+                alert('Gagal membaca file. Pastikan format Excel/CSV valid.');
             }
-
-            // Parse CSV (simple parsing, for Excel you'd need a library like xlsx)
-            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-            const requiredHeaders = ['kode_apar', 'lokasi', 'jenis', 'size'];
-            const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-
-            if (missingHeaders.length > 0) {
-                alert(`Header yang hilang: ${missingHeaders.join(', ')}`);
-                return;
-            }
-
-            const parsedData: ImportRow[] = [];
-            for (let i = 1; i < Math.min(lines.length, 11); i++) { // Preview first 10 rows
-                const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-                if (values.length >= headers.length) {
-                    const row: Record<string, string> = {};
-                    headers.forEach((header, index) => {
-                        row[header] = values[index] || '';
-                    });
-
-                    parsedData.push({
-                        kode_apar: row.kode_apar || '',
-                        lantai: row.lantai || '',
-                        lokasi: row.lokasi || '',
-                        jenis: row.jenis || '',
-                        size: parseInt(row.size) || 2,
-                    });
-                }
-            }
-
-            setPreviewData(parsedData);
-            setShowPreview(true);
-        } catch (error) {
-            console.error('Error parsing file:', error);
-            alert('Gagal membaca file. Pastikan format CSV valid.');
-        }
+        };
+        reader.readAsArrayBuffer(selectedFile);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!file) {
             alert('Pilih file terlebih dahulu');
             return;
         }
+        if (invalidRows.length > 0) {
+            alert('Terdapat baris tidak valid. Perbaiki dahulu sebelum import.');
+            return;
+        }
 
-        // Convert file to base64 for sending to backend
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const base64 = event.target?.result as string;
-
-            post('/fire-safety/apar/import', {
-                data: {
-                    data: previewData.length > 0 ? previewData : [],
-                    file: base64,
-                    filename: file.name,
-                },
-                onSuccess: () => {
-                    reset();
-                    setFile(null);
-                    setPreviewData([]);
-                    setShowPreview(false);
-                    // Clear file input
-                    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-                    if (fileInput) fileInput.value = '';
-                },
-                onError: (errors) => {
-                    console.log('Import errors:', errors);
-                },
-            });
-        };
-        reader.readAsDataURL(file);
+        setData('data', previewData);
+        post('/fire-safety/apar/import', {
+            onSuccess: () => {
+                reset();
+                setFile(null);
+                setPreviewData([]);
+                setInvalidRows([]);
+                setShowPreview(false);
+                const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+                if (fileInput) fileInput.value = '';
+            },
+            onError: (err) => {
+                console.log('Import errors:', err);
+            },
+        });
     };
 
     const downloadTemplate = () => {
-        const csvContent = 'kode_apar,lantai,lokasi,jenis,size\nAPAR-001,Lantai 1,Ruang Server,CO2,2\nAPAR-002,Lantai 2,Area Parkir,Powder,4\nAPAR-003,Basement,Gudang,Foam,6';
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const csv = 'kode_apar,lantai,lokasi,jenis,size\nAPAR-001,Lantai 1,Ruang Server,CO2,2\nAPAR-002,Lantai 2,Area Parkir,Powder,4\nAPAR-003,Basement,Gudang,Foam,6';
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = 'template-import-apar.csv';
@@ -160,29 +128,22 @@ export default function AparUploadExcel({}: Props) {
             <Head title="Import APAR Excel" />
 
             <div className="space-y-6 animate-in fade-in slide-in-from-y-4 duration-400 max-w-3xl">
-                {/* Header */}
                 <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <Link
                             href="/fire-safety/apar"
                             className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
                         >
-                            <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                <path d="M19 12H5" />
-                                <path d="M12 19l-7-7 7-7" />
-                            </svg>
+                            <ArrowLeft className="size-4" />
                             Kembali ke daftar
                         </Link>
-                        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                            Import Data APAR
-                        </h1>
+                        <h1 className="text-2xl font-bold tracking-tight text-foreground">Import Data APAR</h1>
                         <p className="mt-1 max-w-xl text-sm text-muted-foreground">
                             Upload file Excel/CSV untuk menambah data APAR secara massal
                         </p>
                     </div>
                 </header>
 
-                {/* Instructions Card */}
                 <Card className="neu-card border-0 bg-transparent shadow-none animate-in fade-in slide-in-from-y-4 duration-400">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
@@ -222,7 +183,7 @@ export default function AparUploadExcel({}: Props) {
                         </div>
 
                         <div className="flex items-center gap-3 pt-2">
-                            <Button variant="outline" onClick={downloadTemplate} className="gap-2 neu-card border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200">
+                            <Button variant="outline" onClick={downloadTemplate} className="gap-2 neu-btn">
                                 <Download className="size-4" />
                                 Download Template CSV
                             </Button>
@@ -231,7 +192,6 @@ export default function AparUploadExcel({}: Props) {
                     </CardContent>
                 </Card>
 
-                {/* Upload Form */}
                 <Card className="neu-card border-0 bg-transparent shadow-none animate-in fade-in slide-in-from-y-4 duration-400 delay-100">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
@@ -251,10 +211,7 @@ export default function AparUploadExcel({}: Props) {
                                     type="file"
                                     accept=".xlsx,.xls,.csv"
                                     onChange={handleFileChange}
-                                    className={cn(
-                                        'sr-only',
-                                        errors.data && 'border-red-500'
-                                    )}
+                                    className="sr-only"
                                 />
                                 <label
                                     htmlFor="file-upload"
@@ -262,7 +219,7 @@ export default function AparUploadExcel({}: Props) {
                                         'flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-xl cursor-pointer transition-all duration-200',
                                         file
                                             ? 'border-green-500 bg-green-50/50'
-                                            : 'border-border/50 hover:border-primary/50 hover:bg-primary/5 neu-card'
+                                            : 'border-border/50 hover:border-primary/50 hover:bg-primary/5 neu-card',
                                     )}
                                 >
                                     {file ? (
@@ -270,7 +227,7 @@ export default function AparUploadExcel({}: Props) {
                                             <CheckCircle className="size-10 text-green-500 mb-2" />
                                             <p className="font-medium text-green-700">{file.name}</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {(file.size / 1024).toFixed(1)} KB
+                                                {(file.size / 1024).toFixed(1)} KB &middot; {previewData.length} baris terbaca
                                             </p>
                                         </>
                                     ) : (
@@ -292,33 +249,29 @@ export default function AparUploadExcel({}: Props) {
                         {file && (
                             <div className="flex flex-col sm:flex-row items-center gap-3">
                                 <Button
-                                    variant="outline"
-                                    onClick={handlePreview}
-                                    disabled={processing}
-                                    className="w-full sm:w-auto gap-2 neu-card border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-200"
-                                >
-                                    <FileSpreadsheet className="size-4" />
-                                    Pratinjau Data
-                                </Button>
-                                <Button
                                     onClick={handleSubmit}
-                                    disabled={processing}
-                                    className="w-full sm:w-auto gap-2 neu-card bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg transition-all duration-200 active:scale-[0.98]"
+                                    disabled={processing || invalidRows.length > 0}
+                                    className="w-full sm:w-auto gap-2 btn-soft-primary active:scale-[0.98]"
                                 >
                                     <Upload className="size-4" />
                                     {processing ? 'Mengimport...' : 'Import Data'}
                                 </Button>
+                                {invalidRows.length > 0 && (
+                                    <span className="text-sm text-destructive">
+                                        {invalidRows.length} baris tidak valid
+                                    </span>
+                                )}
                             </div>
                         )}
 
-                        {/* Preview */}
                         {showPreview && previewData.length > 0 && (
                             <div className="space-y-3 border-t border-border/50 pt-4 animate-in fade-in slide-in-from-y-2 duration-300">
-                                <h4 className="font-medium text-sm">Pratinjau Data (10 baris pertama)</h4>
-                                <div className="overflow-x-auto neu-card border-border/50 rounded-xl">
+                                <h4 className="font-medium text-sm">Pratinjau Data ({previewData.length} baris)</h4>
+                                <div className="overflow-x-auto glass-panel p-3 rounded-xl">
                                     <table className="w-full text-sm">
                                         <thead>
-                                            <tr className="bg-muted/50 border-b border-border/50">
+                                            <tr className="border-b border-white/60">
+                                                <th className="px-3 py-2 text-left font-semibold text-muted-foreground">No</th>
                                                 <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Kode APAR</th>
                                                 <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Lantai</th>
                                                 <th className="px-3 py-2 text-left font-semibold text-muted-foreground">Lokasi</th>
@@ -327,27 +280,26 @@ export default function AparUploadExcel({}: Props) {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {previewData.map((row, index) => (
-                                                <tr key={index} className="border-t border-border/50 hover:bg-muted/30 transition-colors">
-                                                    <td className="px-3 py-2 font-mono">{row.kode_apar}</td>
-                                                    <td className="px-3 py-2">{row.lantai || '-'}</td>
-                                                    <td className="px-3 py-2 max-w-[200px] truncate">{row.lokasi}</td>
-                                                    <td className="px-3 py-2">
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium neu-card bg-primary/10 text-primary border border-primary/20">
-                                                            {row.jenis}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-3 py-2 font-mono">{row.size} kg</td>
-                                                </tr>
-                                            ))}
+                                            {previewData.map((row, index) => {
+                                                const invalid = invalidRows.includes(index);
+                                                return (
+                                                    <tr key={index} className={cn('border-t border-white/40', invalid && 'bg-red-100/60')}>
+                                                        <td className="px-3 py-2 text-muted-foreground">{index + 1}</td>
+                                                        <td className="px-3 py-2 font-mono">{row.kode_apar || <span className="text-red-500">?</span>}</td>
+                                                        <td className="px-3 py-2">{row.lantai || '-'}</td>
+                                                        <td className="px-3 py-2 max-w-[200px] truncate">{row.lokasi || <span className="text-red-500">?</span>}</td>
+                                                        <td className="px-3 py-2">
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium neu-card bg-primary/10 text-primary border border-primary/20">
+                                                                {row.jenis || <span className="text-red-500">?</span>}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3 py-2 font-mono">{row.size} kg</td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
-                                {previewData.length >= 10 && (
-                                    <p className="text-xs text-muted-foreground">
-                                        Menampilkan 10 dari {previewData.length} baris preview
-                                    </p>
-                                )}
                             </div>
                         )}
 
@@ -355,16 +307,12 @@ export default function AparUploadExcel({}: Props) {
                             href="/fire-safety/apar"
                             className="mt-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                         >
-                            <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                <path d="M19 12H5" />
-                                <path d="M12 19l-7-7 7-7" />
-                            </svg>
+                            <ArrowLeft className="size-4" />
                             Kembali ke daftar
                         </Link>
                     </CardContent>
                 </Card>
 
-                {/* Result Messages */}
                 {errors.data && (
                     <Alert variant="destructive" className="border-destructive/50 neu-card animate-in fade-in slide-in-from-y-2 duration-300">
                         <AlertCircle className="size-4" />

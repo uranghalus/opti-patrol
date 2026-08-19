@@ -247,7 +247,7 @@ export default function AparEdit({ apar, users }: Props) {
                         <Button
                             type="submit"
                             disabled={processing}
-                            className="w-full rounded-[10px] px-6 font-semibold neu-card bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg transition-all duration-200 active:scale-[0.98] sm:w-auto"
+                                    className="w-full rounded-[10px] px-6 font-semibold btn-soft-primary active:scale-[0.98] sm:w-auto"
                         >
                             <svg className="mr-2 size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />

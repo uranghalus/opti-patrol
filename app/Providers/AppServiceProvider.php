@@ -7,6 +7,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -29,6 +30,13 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureSocialite();
+
+        // Implicitly grant the "superadmin" role all permissions.
+        // Follows Spatie v8 "Defining a Super-Admin": https://spatie.be/docs/laravel-permission/v8/basic-usage/super-admin
+        // Must return null (not false) so normal policies still run when this does not apply.
+        Gate::before(function ($user, $ability) {
+            return $user->hasRole('superadmin') ? true : null;
+        });
     }
 
     /**

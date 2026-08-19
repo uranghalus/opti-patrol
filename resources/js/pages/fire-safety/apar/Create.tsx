@@ -293,7 +293,7 @@ export default function AparCreate({ users }: Props) {
                                 <Button
                                     type="submit"
                                     disabled={processing}
-                                    className="w-full rounded-[10px] px-6 font-semibold neu-card bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg transition-all duration-200 active:scale-[0.98] sm:w-auto"
+                                    className="w-full rounded-[10px] px-6 font-semibold btn-soft-primary active:scale-[0.98] sm:w-auto"
                                 >
                                     <Save className="size-4" />
                                     {processing ? 'Menyimpan...' : 'Simpan APAR'}

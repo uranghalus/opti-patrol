@@ -1,52 +1,49 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
+
 <head>
-    <meta charset="UTF-8">
-    <title>QR Code APAR</title>
     <style>
         body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20mm;
-        }
-        .container {
+            font-family: sans-serif;
             text-align: center;
-            max-width: 100%;
         }
-        .qr-container {
-            margin-bottom: 20px;
-        }
-        .qr-image {
-            max-width: 100%;
-            height: auto;
-            border: 1px solid #e0e0e0;
-            padding: 10px;
-            background: #fff;
-        }
-        .code {
-            font-family: 'Courier New', monospace;
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
-            letter-spacing: 2px;
-        }
+
         .label {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 8px;
+            font-size: 18px;
+            margin-top: 20px;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+            border: 2px solid #000;
+            border-radius: 5px;
         }
-        @page {
-            margin: 15mm;
+
+        .qr-code {
+            border: 10px solid #000;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            background: #000;
+            width: 200px;
+            height: 200px;
+            display: inline-block;
+        }
+
+        .qr-code-container {
+            display: inline-block;
+            text-align: center;
+            margin: 20px;
+            padding: 15px;
+            border: 2px solid #000;
+            border-radius: 10px;
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="label">Kode APAR</div>
-        <div class="code">{{ $kode_apar }}</div>
-        <div class="qr-container">
-            <img src="{{ $qr_base64 }}" alt="QR Code" class="qr-image">
-        </div>
+    <div class="qr-code-container">
+        <img src="{{ $qr_base64 }}" alt="QR Code" class="qr-code">
+        <div class="label">Kode Apar: {{ $kode_apar }}</div>
     </div>
 </body>
+
 </html>

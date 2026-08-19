@@ -414,6 +414,69 @@
     border-radius: 16px;
 }
 
+/* ─── AER: Neumorphic secondary button ─── */
+.neu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 16px;
+    color: #4a5a66;
+    background: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+        4px 4px 12px rgba(195, 204, 212, 0.4),
+        -4px -4px 12px rgba(255, 255, 255, 0.8),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    transition: all 200ms ease;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.neu-btn:hover:not(:disabled) {
+    border-color: rgba(77, 184, 232, 0.5);
+    background: rgba(77, 184, 232, 0.05);
+    box-shadow:
+        6px 6px 16px rgba(195, 204, 212, 0.45),
+        -6px -6px 16px rgba(255, 255, 255, 0.85),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.neu-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow:
+        inset 3px 3px 8px rgba(195, 204, 212, 0.4),
+        inset -3px -3px 8px rgba(255, 255, 255, 0.8);
+}
+
+.neu-btn:disabled,
+.neu-btn[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ─── AER: Neumorphic well (inset field on cards) ─── */
+.neu-well {
+    background: #e8eef2;
+    border-radius: 12px;
+    box-shadow:
+        inset 3px 3px 6px rgba(195, 204, 212, 0.5),
+        inset -3px -3px 6px rgba(255, 255, 255, 0.9),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* ─── AER: Neumorphic dial (header gauge) ─── */
+.neu-dial {
+    background: #ffffff;
+    border-radius: 9999px;
+    box-shadow:
+        4px 4px 10px rgba(195, 204, 212, 0.5),
+        -4px -4px 10px rgba(255, 255, 255, 0.9),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
 /* ─── Stage: busy gradient so glass has something to refract ─── */
 .preview-stage {
     background:
@@ -511,9 +574,10 @@
    AER — Soft Primary Button
    ═══════════════════════════════════════════════════════════ */
 .btn-soft-primary {
-    background: #4db8e8;
+    background: linear-gradient(135deg, #4db8e8, #3aa8d8);
     color: #ffffff;
-    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 16px;
     font-weight: 600;
     transition:
         color 200ms ease,
@@ -521,13 +585,13 @@
         transform 200ms ease,
         background-color 200ms ease;
     box-shadow:
-        4px 4px 12px rgba(195, 204, 212, 0.4),
-        -4px -4px 12px rgba(255, 255, 255, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        5px 5px 14px rgba(195, 204, 212, 0.45),
+        -5px -5px 14px rgba(255, 255, 255, 0.85),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .btn-soft-primary:hover:not(:disabled) {
-    background: #3aa8d8;
+    background: linear-gradient(135deg, #43b0e2, #349fd0);
     transform: translateY(-1px);
     box-shadow:
         6px 6px 16px rgba(195, 204, 212, 0.5),
