@@ -12,12 +12,19 @@ import { useState } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
 
-const drawerSections: { title: string; icon: React.ComponentType<{ className?: string }>; items: { title: string; href: string }[] }[] = [
+const drawerSections: {
+    title: string;
+    icon: React.ComponentType<{ className?: string }>;
+    items: { title: string; href: string }[];
+}[] = [
     {
         title: 'Role Management',
         icon: UserCog2,
         items: [
-            { title: 'Permission List', href: '/role-management/permission-list' },
+            {
+                title: 'Permission List',
+                href: '/role-management/permission-list',
+            },
             { title: 'Role List', href: '/role-management/role-list' },
         ],
     },
@@ -36,7 +43,10 @@ const drawerSections: { title: string; icon: React.ComponentType<{ className?: s
         title: 'Data Fire Safety',
         icon: FireExtinguisher,
         items: [
-            { title: 'Data CP Security', href: '/fire-safety/cekpoin-security' },
+            {
+                title: 'Data CP Security',
+                href: '/fire-safety/cekpoin-security',
+            },
             { title: 'Data APAR', href: '/fire-safety/apar' },
             { title: 'Data Hydrant', href: '/fire-safety/hydrant' },
         ],
@@ -47,7 +57,10 @@ const drawerSections: { title: string; icon: React.ComponentType<{ className?: s
         items: [
             { title: 'Laporan Rekap APAR', href: '/reports/apar-rekap' },
             { title: 'Laporan Rekap Hydrant', href: '/reports/hydrant-rekap' },
-            { title: 'Laporan Rekap Cekpoint', href: '/reports/cekpoint-rekap' },
+            {
+                title: 'Laporan Rekap Cekpoint',
+                href: '/reports/cekpoint-rekap',
+            },
         ],
     },
 ];
@@ -61,9 +74,14 @@ export function MobileHeader() {
             <header className="mobile-header">
                 <div className="flex items-center gap-2.5">
                     <div className="neu-icon flex size-7 items-center justify-center">
-                        <ShieldCheck className="size-3.5 text-white" strokeWidth={2.5} />
+                        <ShieldCheck
+                            className="size-3.5 text-white"
+                            strokeWidth={2.5}
+                        />
                     </div>
-                    <span className="text-sm font-bold tracking-tight text-foreground">OptiPatrol</span>
+                    <span className="text-sm font-bold tracking-tight text-foreground">
+                        OptiPatrol
+                    </span>
                 </div>
                 <button
                     onClick={() => setDrawerOpen(true)}
@@ -75,7 +93,10 @@ export function MobileHeader() {
 
             {/* Sidebar Drawer */}
             {drawerOpen && (
-                <div className="mobile-drawer-overlay" onClick={() => setDrawerOpen(false)}>
+                <div
+                    className="mobile-drawer-overlay"
+                    onClick={() => setDrawerOpen(false)}
+                >
                     <div
                         className="mobile-drawer"
                         onClick={(e) => e.stopPropagation()}
@@ -83,11 +104,18 @@ export function MobileHeader() {
                         {/* Drawer Header */}
                         <div className="flex items-center gap-3 px-5 py-5">
                             <div className="neu-icon flex size-8 items-center justify-center">
-                                <ShieldCheck className="size-4 text-white" strokeWidth={2.5} />
+                                <ShieldCheck
+                                    className="size-4 text-white"
+                                    strokeWidth={2.5}
+                                />
                             </div>
                             <div className="flex-1">
-                                <h2 className="text-sm font-bold text-foreground">Menu</h2>
-                                <p className="text-[0.65rem] text-muted-foreground/50">Navigasi Lengkap</p>
+                                <h2 className="text-sm font-bold text-foreground">
+                                    Menu
+                                </h2>
+                                <p className="text-[0.65rem] text-muted-foreground/50">
+                                    Navigasi Lengkap
+                                </p>
                             </div>
                             <button
                                 onClick={() => setDrawerOpen(false)}
@@ -101,16 +129,25 @@ export function MobileHeader() {
                         <div className="flex-1 overflow-y-auto px-4 pb-8">
                             {drawerSections.map((section, i) => {
                                 const SectionIcon = section.icon;
-                                const hasActive = section.items.some((item) => isCurrentUrl(item.href));
+                                const hasActive = section.items.some((item) =>
+                                    isCurrentUrl(item.href),
+                                );
 
                                 return (
-                                    <div key={section.title} className={cn('mb-4', i > 0 && 'mt-2')}>
+                                    <div
+                                        key={section.title}
+                                        className={cn('mb-4', i > 0 && 'mt-2')}
+                                    >
                                         <div className="flex items-center gap-2 px-2 py-2">
-                                            <SectionIcon className={cn(
-                                                'size-4',
-                                                hasActive ? 'text-primary' : 'text-muted-foreground/40',
-                                            )} />
-                                            <span className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground/45">
+                                            <SectionIcon
+                                                className={cn(
+                                                    'size-4',
+                                                    hasActive
+                                                        ? 'text-primary'
+                                                        : 'text-muted-foreground/40',
+                                                )}
+                                            />
+                                            <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground/45 uppercase">
                                                 {section.title}
                                             </span>
                                         </div>
@@ -120,10 +157,15 @@ export function MobileHeader() {
                                                     key={item.href}
                                                     href={item.href}
                                                     prefetch
-                                                    onClick={() => setDrawerOpen(false)}
+                                                    onClick={() =>
+                                                        setDrawerOpen(false)
+                                                    }
                                                     className={cn(
                                                         'mobile-drawer-item',
-                                                        isCurrentUrl(item.href) && 'mobile-drawer-item-active',
+                                                        isCurrentUrl(
+                                                            item.href,
+                                                        ) &&
+                                                            'mobile-drawer-item-active',
                                                     )}
                                                 >
                                                     {item.title}

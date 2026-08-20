@@ -13,6 +13,7 @@ class Karyawan extends Model
      * @var list<string>
      */
     protected $table = 'tbl_karyawans';
+
     protected $primaryKey = 'id_karyawan';
 
     protected $fillable = [
@@ -33,7 +34,7 @@ class Karyawan extends Model
         'create_date',
         'create_id_user',
         'modified_date',
-        'modified_id_user'
+        'modified_id_user',
     ];
 
     public function department()
@@ -45,6 +46,7 @@ class Karyawan extends Model
     {
         return $this->hasOne(User::class, 'karyawan_id', 'id_karyawan');
     }
+
     public function jabatan()
     {
         return $this->belongsTo(Jabatan::class, 'jabatan_id');

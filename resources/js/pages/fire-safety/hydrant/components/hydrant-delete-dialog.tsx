@@ -1,13 +1,13 @@
+import { useForm } from '@inertiajs/react';
+import { TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 import ConfirmDialog from '@/components/confirm-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { useForm } from '@inertiajs/react';
-import { TriangleAlert } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Hydrant } from '@/types';
+import type { Hydrant } from '@/types';
 
 interface Props {
     open: boolean;
@@ -29,8 +29,10 @@ export default function HydrantDeleteDialog({ open, onOpenChange, currentRow }: 
     const handleDelete = () => {
         if (value !== currentRow.kode_unik) {
             setErrorMessage('Kode unik tidak sesuai');
+
             return;
         }
+
         destroy(`/fire-safety/hydrant/${currentRow.id}`, {
             preserveScroll: true,
             onSuccess: () => {
@@ -44,7 +46,10 @@ export default function HydrantDeleteDialog({ open, onOpenChange, currentRow }: 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setValue(e.target.value);
-        if (errorMessage) setErrorMessage('');
+
+        if (errorMessage) {
+setErrorMessage('');
+}
     };
 
     return (

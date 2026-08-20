@@ -1,11 +1,11 @@
+import type { ColumnDef } from '@tanstack/react-table';
+import { Droplet, Wrench } from 'lucide-react';
 import { DataTableColumnHeader } from '@/components/datatable-column-header';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { ColumnDef } from '@tanstack/react-table';
-import { Hydrant } from '@/types';
+import type { Hydrant } from '@/types';
 import HydrantRowAction from './hydrant-row-action';
-import { Badge } from '@/components/ui/badge';
-import { Droplet, Wrench } from 'lucide-react';
 
 export const HydrantColumn: ColumnDef<Hydrant>[] = [
     {
@@ -50,6 +50,7 @@ export const HydrantColumn: ColumnDef<Hydrant>[] = [
         header: ({ column }) => <DataTableColumnHeader column={column} title="Tipe" />,
         cell: ({ row }) => {
             const tipe = row.getValue('tipe') as 'Indoor' | 'Outdoor';
+
             return (
                 <Badge variant="outline" className="gap-1">
                     {tipe === 'Indoor' ? <Droplet className="h-3 w-3" /> : <Wrench className="h-3 w-3" />}

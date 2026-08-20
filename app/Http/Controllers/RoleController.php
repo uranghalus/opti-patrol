@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use App\Http\Requests\RoleRequest;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller implements HasMiddleware
@@ -18,95 +18,203 @@ class RoleController extends Controller implements HasMiddleware
             new Middleware('permission:roles index', only: ['index']),
             new Middleware('permission:roles create', only: ['create', 'store']),
             new Middleware('permission:roles edit', only: ['edit', 'update']),
-            new Middleware('permission:roles delete', only: ['destroy']),
+            new Middleware('permission:roles delete', only: ['destroy', 'bulkDestroy']),
+            new Middleware('permission:roles export', only: ['export']),
         ];
     }
 
     public function index(Request $request)
     {
-        $query = Role::query();
+        $query = Role::query()
+            ->withCount('permissions')
+            ->with('permissions:id,name')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%");
+            })
+            ->when($request->filled('guard'), function ($q) use ($request) {
+                $q->where('guard_name', $request->guard);
+            })
+            ->orderBy('name');
 
-        if ($request->filled('search')) {
-            $query->where('name', 'like', "%{$request->search}%");
-        }
+        $perPage = $request->input('per_page', 15);
+        $roles = $query->paginate($perPage)->withQueryString();
 
-        $roles = Role::with('permissions:id,name')
-            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"))
-            ->paginate(15)
-            ->withQueryString();
+        $guards = Role::select('guard_name')->distinct()->pluck('guard_name');
 
-        return Inertia::render('role-management/index', [
+        return Inertia::render('role-management/Index', [
             'roles' => $roles,
-            'filters' => $request->only('search'),
+            'filters' => $request->only(['search', 'guard', 'per_page']),
+            'guards' => $guards,
         ]);
     }
 
-    public function create(Request $request)
+    public function create()
     {
-        return Inertia::render('role-management/create');
-    }
+        $permissions = Permission::orderBy('name')->get(['id', 'name', 'guard_name']);
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|min:3|max:255|unique:roles,name',
-            'permissions' => 'nullable|array',
-        ]);
+        $groupedPermissions = $permissions->groupBy(function ($permission) {
+            $parts = explode(' ', $permission->name);
 
-        DB::transaction(function () use ($validated) {
-            $role = Role::create(['name' => $validated['name']]);
-            
-            if (!empty($validated['permissions'])) {
-                $role->givePermissionTo($validated['permissions']);
-            }
+            return $parts[0] ?? 'other';
+        })->map(function ($group) {
+            return $group->map(fn ($p) => ['id' => $p->id, 'name' => $p->name])->values();
         });
 
-        return redirect()->route('role.index')->with('success', 'Role created successfully.');
+        return Inertia::render('role-management/Create', [
+            'permissions' => $groupedPermissions,
+            'guards' => Permission::select('guard_name')->distinct()->pluck('guard_name'),
+        ]);
+    }
+
+    public function store(RoleRequest $request)
+    {
+        $role = Role::create([
+            'name' => $request->name,
+            'guard_name' => $request->guard_name ?? 'web',
+        ]);
+
+        if ($request->filled('permissions')) {
+            $permissionNames = Permission::whereIn('id', $request->permissions)->pluck('name');
+            $role->givePermissionTo($permissionNames);
+        }
+
+        return redirect()->route('role.index')->with('success', 'Role berhasil dibuat.');
     }
 
     public function edit(Role $role)
     {
-        return Inertia::render('role-management/edit', [
-            'role' => $role->load('permissions'),
+        $role->load('permissions');
+
+        $permissions = Permission::orderBy('name')->get(['id', 'name', 'guard_name']);
+
+        $groupedPermissions = $permissions->groupBy(function ($permission) {
+            $parts = explode(' ', $permission->name);
+
+            return $parts[0] ?? 'other';
+        })->map(function ($group) {
+            return $group->map(fn ($p) => ['id' => $p->id, 'name' => $p->name])->values();
+        });
+
+        return Inertia::render('role-management/Edit', [
+            'role' => $role->load('permissions:id,name'),
+            'permissions' => $groupedPermissions,
+            'guards' => Permission::select('guard_name')->distinct()->pluck('guard_name'),
         ]);
     }
 
-    public function update(Request $request, Role $role)
+    public function update(RoleRequest $request, Role $role)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|min:3|max:255|unique:roles,name,' . $role->id,
-            'permissions' => 'nullable|array',
+        $role->update([
+            'name' => $request->name,
+            'guard_name' => $request->guard_name ?? 'web',
         ]);
 
-        DB::transaction(function () use ($role, $validated) {
-            $role->update(['name' => $validated['name']]);
-            
-            if (!empty($validated['permissions'])) {
-                $role->syncPermissions($validated['permissions']);
-            } else {
-                $role->permissions()->detach();
-            }
-        });
+        if ($request->filled('permissions')) {
+            $permissionNames = Permission::whereIn('id', $request->permissions)->pluck('name');
+            $role->syncPermissions($permissionNames);
+        } else {
+            $role->permissions()->detach();
+        }
 
-        return redirect()->route('role.index')->with('success', 'Role updated successfully.');
+        return redirect()->route('role.index')->with('success', 'Role berhasil diperbarui.');
     }
 
     public function destroy(Role $role)
     {
+        if ($role->name === 'superadmin') {
+            return back()->with('error', 'Role superadmin tidak dapat dihapus.');
+        }
+
         $role->delete();
 
-        return back()->with('success', 'Role deleted successfully.');
+        return back()->with('success', 'Role berhasil dihapus.');
     }
 
     public function bulkDestroy(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:roles,id',
         ]);
 
-        Role::whereIn('id', $validated['ids'])->delete();
+        $count = Role::whereIn('id', $request->ids)
+            ->where('name', '!=', 'superadmin')
+            ->delete();
 
-        return back()->with('success', 'Roles deleted successfully.');
+        return back()->with('success', "{$count} Role berhasil dihapus.");
+    }
+
+    public function bulkAssignPermissions(Request $request)
+    {
+        $request->validate([
+            'role_ids' => 'required|array',
+            'role_ids.*' => 'exists:roles,id',
+            'permission_ids' => 'required|array',
+            'permission_ids.*' => 'exists:permissions,id',
+            'action' => 'required|in:add,remove',
+        ]);
+
+        $permissionNames = Permission::whereIn('id', $request->permission_ids)->pluck('name');
+        $roles = Role::whereIn('id', $request->role_ids)->get();
+
+        foreach ($roles as $role) {
+            if ($role->name === 'superadmin') {
+                continue;
+            }
+
+            if ($request->action === 'add') {
+                $role->givePermissionTo($permissionNames);
+            } else {
+                $role->revokePermissionTo($permissionNames);
+            }
+        }
+
+        return back()->with('success', 'Izin berhasil '.($request->action === 'add' ? 'ditambahkan' : 'dihapus').' ke '.count($roles).' role.');
+    }
+
+    public function clone(Role $role)
+    {
+        $newRole = Role::create([
+            'name' => $role->name.' (Copy)',
+            'guard_name' => $role->guard_name,
+        ]);
+
+        $newRole->syncPermissions($role->permissions->pluck('name'));
+
+        return redirect()->route('role.edit', $newRole)->with('success', 'Role berhasil diduplikasi. Silakan edit nama dan izin sesuai kebutuhan.');
+    }
+
+    public function export(Request $request)
+    {
+        $query = Role::query()
+            ->with('permissions:id,name')
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%");
+            })
+            ->when($request->filled('guard'), function ($q) use ($request) {
+                $q->where('guard_name', $request->guard);
+            })
+            ->orderBy('name');
+
+        $roles = $query->get();
+
+        $headers = ['ID', 'Name', 'Guard', 'Permissions Count', 'Permissions', 'Created At', 'Updated At'];
+        $rows = $roles->map(function ($role) {
+            return [
+                $role->id,
+                $role->name,
+                $role->guard_name,
+                $role->permissions_count ?? $role->permissions->count(),
+                $role->permissions->pluck('name')->implode(', '),
+                $role->created_at?->format('Y-m-d H:i:s'),
+                $role->updated_at?->format('Y-m-d H:i:s'),
+            ];
+        });
+
+        return Inertia::render('role-management/Export', [
+            'headers' => $headers,
+            'rows' => $rows,
+            'filename' => 'roles-export-'.now()->format('Y-m-d'),
+        ]);
     }
 }

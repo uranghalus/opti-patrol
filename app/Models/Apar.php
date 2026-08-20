@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Apar extends Model
 {
@@ -19,11 +18,11 @@ class Apar extends Model
         'lokasi',
         'jenis',
         'size',
-        'user_id'
+        'user_id',
     ];
 
     protected $casts = [
-        'size' => 'decimal:1'
+        'size' => 'decimal:1',
     ];
 
     public static $jenisApar = ['CO2', 'Powder', 'Foam', 'Air'];
@@ -38,6 +37,7 @@ class Apar extends Model
     {
         return $this->hasMany(AparInspection::class);
     }
+
     public function lastInspection()
     {
         return $this->hasOne(AparInspection::class)->latestOfMany('tanggal_inspeksi');

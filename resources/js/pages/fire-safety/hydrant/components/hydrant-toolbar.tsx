@@ -1,10 +1,10 @@
+import type { Table } from '@tanstack/react-table';
+import { Printer, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { DataTableFacetedFilter } from '@/components/datatable-faceted-filter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table } from '@tanstack/react-table';
-import { Printer, RefreshCw } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 interface Props<TData> {
     table: Table<TData>;
@@ -29,7 +29,11 @@ export default function HydrantToolbar<TData>({ table }: Props<TData>) {
 
     const handlePrint = () => {
         const params = new URLSearchParams();
-        if (selectedLantai) params.append('lantai', selectedLantai);
+
+        if (selectedLantai) {
+params.append('lantai', selectedLantai);
+}
+
         params.append('batch', selectedBatch);
 
         window.open(`/fire-safety/hydrant/generate-mass-qr?${params.toString()}`, '_blank');

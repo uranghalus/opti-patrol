@@ -1,3 +1,5 @@
+import type { Row } from '@tanstack/react-table';
+import { Download, Ellipsis, SquarePen, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -8,9 +10,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useDialog } from '@/context/dialog-context';
-import { Row } from '@tanstack/react-table';
-import { Download, Ellipsis, SquarePen, Trash2 } from 'lucide-react';
-import { Hydrant } from '@/types';
+import type { Hydrant } from '@/types';
 
 interface Props {
     row: Row<Hydrant>;
@@ -18,6 +18,7 @@ interface Props {
 
 export default function HydrantRowAction({ row }: Props) {
     const { setOpen, setCurrentRow } = useDialog();
+
     return (
         <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>

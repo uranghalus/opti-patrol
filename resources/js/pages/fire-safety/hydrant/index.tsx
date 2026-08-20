@@ -1,9 +1,14 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import { Plus, Search, Filter, Download, Printer, X, Droplet, Wrench, Layers, MapPin, UserRound, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, LoaderCircle, TriangleAlert, SquarePen, Trash2, FileSpreadsheet } from 'lucide-react';
 import { useEffect, useState, useTransition, useRef } from 'react';
+import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,14 +19,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 import { HasAnyPermission } from '@/lib/permission';
-import { useForm } from '@inertiajs/react';
-import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import type { Hydrant } from '@/types';
 
 interface PageLink {
@@ -52,6 +52,7 @@ function getTipeBadge(t: string) {
         Indoor: { class: 'bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20', icon: <Droplet className="h-3 w-3" /> },
         Outdoor: { class: 'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20', icon: <Wrench className="h-3 w-3" /> },
     };
+
     return config[t as keyof typeof config] ?? { class: 'bg-muted text-muted-foreground ring-1 ring-border', icon: <Droplet className="h-3 w-3" /> };
 }
 
@@ -79,18 +80,25 @@ function HydrantActionDialog({ currentRow, open, onOpenChange }: { currentRow?: 
         }
     }, [open, currentRow]);
 
-    const handleClose = () => { reset(); onOpenChange(false); };
+    const handleClose = () => {
+ reset(); onOpenChange(false); 
+};
 
     const onSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (isEdit) {
             put(`/fire-safety/hydrant/${currentRow?.id}`, {
-                onSuccess: () => { toast.success('Data Hydrant berhasil diubah'); handleClose(); },
+                onSuccess: () => {
+ toast.success('Data Hydrant berhasil diubah'); handleClose(); 
+},
                 preserveScroll: true,
             });
         } else {
             post('/fire-safety/hydrant', {
-                onSuccess: () => { toast.success('Data Hydrant berhasil ditambah'); handleClose(); },
+                onSuccess: () => {
+ toast.success('Data Hydrant berhasil ditambah'); handleClose(); 
+},
                 preserveScroll: true,
             });
         }
@@ -159,14 +167,27 @@ function HydrantDeleteDialog({ currentRow, open, onOpenChange }: { currentRow: H
     const [errorMessage, setErrorMessage] = useState('');
     const { delete: destroy, processing } = useForm();
 
-    useEffect(() => { if (open) { setValue(''); setErrorMessage(''); } }, [open]);
+    useEffect(() => {
+ if (open) {
+ setValue(''); setErrorMessage(''); 
+} 
+}, [open]);
 
-    const handleClose = () => { setValue(''); setErrorMessage(''); onOpenChange(false); };
+    const handleClose = () => {
+ setValue(''); setErrorMessage(''); onOpenChange(false); 
+};
     const handleDelete = () => {
-        if (value !== currentRow.kode_unik) { setErrorMessage('Kode unik tidak sesuai'); return; }
+        if (value !== currentRow.kode_unik) {
+ setErrorMessage('Kode unik tidak sesuai');
+
+ return; 
+}
+
         destroy(`/fire-safety/hydrant/${currentRow.id}`, {
             preserveScroll: true,
-            onSuccess: () => { toast.success('Data Hydrant berhasil dihapus'); handleClose(); },
+            onSuccess: () => {
+ toast.success('Data Hydrant berhasil dihapus'); handleClose(); 
+},
         });
     };
 
@@ -195,7 +216,13 @@ function HydrantDeleteDialog({ currentRow, open, onOpenChange }: { currentRow: H
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="confirmation" className="text-sm font-medium">Konfirmasi Penghapusan</Label>
-                        <Input id="confirmation" value={value} onChange={(e) => { setValue(e.target.value); if (errorMessage) setErrorMessage(''); }} placeholder={`Ketik "${currentRow.kode_unik}" untuk konfirmasi`} disabled={processing} />
+                        <Input id="confirmation" value={value} onChange={(e) => {
+ setValue(e.target.value);
+
+ if (errorMessage) {
+setErrorMessage('');
+} 
+}} placeholder={`Ketik "${currentRow.kode_unik}" untuk konfirmasi`} disabled={processing} />
                         {errorMessage && <p className="text-xs text-destructive">{errorMessage}</p>}
                     </div>
                 </div>
@@ -212,6 +239,7 @@ function HydrantDeleteDialog({ currentRow, open, onOpenChange }: { currentRow: H
 
 function HydrantCard({ item, isLoading, onEdit, onDelete }: { item: Hydrant; isLoading: boolean; onEdit: (h: Hydrant) => void; onDelete: (h: Hydrant) => void }) {
     const cfg = getTipeBadge(item.tipe);
+
     return (
         <article className={cn(
             'neu-card group relative flex flex-col gap-4 rounded-2xl p-4 sm:p-5 transition-all duration-300',
@@ -316,7 +344,11 @@ function BulkPrintSection({ lantaiList, batchCount }: { lantaiList: string[]; ba
 
     const handlePrint = () => {
         const params = new URLSearchParams();
-        if (selectedLantai) params.append('lantai', selectedLantai);
+
+        if (selectedLantai) {
+params.append('lantai', selectedLantai);
+}
+
         params.append('batch', selectedBatch);
         startTransition(() => {
             window.open(`/fire-safety/hydrant/generate-mass-qr?${params.toString()}`, '_blank');
@@ -443,7 +475,10 @@ function FilterCard({ filters, filterOptions, isPending, onSearch }: { filters: 
 }
 
 function Pagination({ data, isPending, onPage }: { data: PaginatedData<Hydrant>; isPending: boolean; onPage: (url: string | null) => void }) {
-    if (data.last_page <= 1) return null;
+    if (data.last_page <= 1) {
+return null;
+}
+
     const prev = data.links.find((l) => l.label === '&laquo; Previous' || l.label.includes('Previous'));
     const next = data.links.find((l) => l.label === 'Next &raquo;' || l.label.includes('Next'));
 
@@ -520,9 +555,19 @@ export default function HydrantIndex({ hydrantdata, filters, filterOptions }: Pr
 
     const handleSearch = (next: { search: string; tipe: string; lantai: string }) => {
         const params = new URLSearchParams();
-        if (next.search) params.set('search', next.search);
-        if (next.tipe) params.set('tipe', next.tipe);
-        if (next.lantai) params.set('lantai', next.lantai);
+
+        if (next.search) {
+params.set('search', next.search);
+}
+
+        if (next.tipe) {
+params.set('tipe', next.tipe);
+}
+
+        if (next.lantai) {
+params.set('lantai', next.lantai);
+}
+
         startTransition(() => {
             router.get(`/fire-safety/hydrant${params.toString() ? `?${params.toString()}` : ''}`, {}, {
                 preserveScroll: true,
@@ -533,7 +578,10 @@ export default function HydrantIndex({ hydrantdata, filters, filterOptions }: Pr
     };
 
     const handlePage = (url: string | null) => {
-        if (!url) return;
+        if (!url) {
+return;
+}
+
         startTransition(() => {
             router.get(url, {}, {
                 preserveScroll: false,
@@ -542,9 +590,15 @@ export default function HydrantIndex({ hydrantdata, filters, filterOptions }: Pr
         });
     };
 
-    const openAdd = () => { setCurrentRow(undefined); setDialogMode('add'); setDialogOpen(true); };
-    const openEdit = (h: Hydrant) => { setCurrentRow(h); setDialogMode('edit'); setDialogOpen(true); };
-    const openDelete = (h: Hydrant) => { setDeleteRow(h); setDeleteOpen(true); };
+    const openAdd = () => {
+ setCurrentRow(undefined); setDialogMode('add'); setDialogOpen(true); 
+};
+    const openEdit = (h: Hydrant) => {
+ setCurrentRow(h); setDialogMode('edit'); setDialogOpen(true); 
+};
+    const openDelete = (h: Hydrant) => {
+ setDeleteRow(h); setDeleteOpen(true); 
+};
 
     const dialFill = 72;
     const dialCirc = 2 * Math.PI * 15.5;

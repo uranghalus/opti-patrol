@@ -2,13 +2,13 @@ import { Head } from '@inertiajs/react';
 import { Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Upload, FileSpreadsheet, AlertCircle, CheckCircle, Download } from 'lucide-react';
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
-import * as XLSX from 'xlsx';
 
 interface Props {
     // No props needed for upload form
@@ -36,16 +36,22 @@ export default function AparUploadExcel({}: Props) {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0];
-        if (!selectedFile) return;
+
+        if (!selectedFile) {
+return;
+}
 
         const allowed = /\.(xlsx|xls|csv)$/i.test(selectedFile.name);
+
         if (!allowed) {
             alert('Format file tidak didukung. Gunakan .xlsx, .xls, atau .csv');
+
             return;
         }
 
         if (selectedFile.size > 5 * 1024 * 1024) {
             alert('Ukuran file terlalu besar. Maksimal 5MB.');
+
             return;
         }
 
@@ -87,12 +93,16 @@ export default function AparUploadExcel({}: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
         if (!file) {
             alert('Pilih file terlebih dahulu');
+
             return;
         }
+
         if (invalidRows.length > 0) {
             alert('Terdapat baris tidak valid. Perbaiki dahulu sebelum import.');
+
             return;
         }
 
@@ -105,7 +115,10 @@ export default function AparUploadExcel({}: Props) {
                 setInvalidRows([]);
                 setShowPreview(false);
                 const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-                if (fileInput) fileInput.value = '';
+
+                if (fileInput) {
+fileInput.value = '';
+}
             },
             onError: (err) => {
                 console.log('Import errors:', err);
@@ -282,6 +295,7 @@ export default function AparUploadExcel({}: Props) {
                                         <tbody>
                                             {previewData.map((row, index) => {
                                                 const invalid = invalidRows.includes(index);
+
                                                 return (
                                                     <tr key={index} className={cn('border-t border-white/40', invalid && 'bg-red-100/60')}>
                                                         <td className="px-3 py-2 text-muted-foreground">{index + 1}</td>

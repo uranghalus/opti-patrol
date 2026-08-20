@@ -23,16 +23,18 @@ class AparInspection extends Model
         'foto_apar',
         'nama_petugas',
         // 'tanggal_inspeksi',
-        'tanggal_refill'
+        'tanggal_refill',
     ];
-
 
     public function getFotoAparUrlAttribute(): ?string
     {
-        if (!$this->foto_apar) return null;
+        if (! $this->foto_apar) {
+            return null;
+        }
 
         return Storage::disk('s3')->url($this->foto_apar); // jika file public
     }
+
     // Relasi ke APAR
     public function apar()
     {

@@ -4,16 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Hydrant;
 use App\Models\HydrantInspection;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
-use Inertia\Inertia;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 use Intervention\Image\Laravel\Facades\Image;
 
 class HydrantInspectionController extends Controller implements HasMiddleware
@@ -28,6 +28,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
             new Middleware('permission:hydrant-inspection.export', only: ['exportPdf']),
         ];
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -35,6 +36,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
     {
         //
         $inspections = HydrantInspection::with(['hydrant', 'user.karyawan'])->latest()->get();
+
         return Inertia::render('fire-safety/inspection/hydrant/Index', [
             'inspections' => $inspections,
         ]);
@@ -47,6 +49,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
     {
         //
         $hydrants = Hydrant::all();
+
         return Inertia::render('fire-safety/inspection/hydrant/Create', [
             'hydrants' => $hydrants,
         ]);
@@ -60,7 +63,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
         ini_set('max_execution_time', 120);
         ini_set('memory_limit', '256M');
         try {
-            //code...
+            // code...
             $validated = $request->validate([
                 'hydrant_id' => ['required', 'exists:hydrant,id'],
                 'regu' => ['required', 'in:PAGI,MIDDLE,SIANG,MALAM'],
@@ -86,7 +89,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
                     'foto_hydrant' => ['image', 'mimes:jpg,jpeg,png', 'max:4096'],
                 ]);
                 $image = Image::read($request->file('foto_hydrant'));
-                $filename = 'hydrant-' . time() . '-' . Str::random(5) . '.jpg';
+                $filename = 'hydrant-'.time().'-'.Str::random(5).'.jpg';
                 $path = "inspection/hydrant/{$filename}";
                 $uploadedFile = $image->toJpeg(75);
                 Storage::disk('s3')->put($path, (string) $uploadedFile);
@@ -98,7 +101,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
 
                 $image = Image::read($decoded);
 
-                $filename = 'hydrant-' . time() . '-' . Str::random(5) . '.jpg';
+                $filename = 'hydrant-'.time().'-'.Str::random(5).'.jpg';
                 $path = "inspection/hydrant/{$filename}";
 
                 $compressed = $image->toJpeg(75);
@@ -111,6 +114,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
 
             $validated['foto_hydrant'] = $finalPath;
             HydrantInspection::create($validated);
+
             return redirect()->route('inspection.hydrant.index')->with('success', 'Inspeksi Hydrant berhasil ditambahkan.');
         } catch (\Exception $e) {
             Log::error('Hydrant Upload Failed', [
@@ -132,6 +136,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
     {
         //
         $inspection = HydrantInspection::with(['hydrant', 'user.karyawan'])->findOrFail($id);
+
         return Inertia::render('fire-safety/inspection/hydrant/Show', [
             'inspection' => $inspection->append('foto_hydrant_url'),
         ]);
@@ -145,6 +150,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
         //
         $inspections = HydrantInspection::with(['hydrant', 'user.karyawan'])->findOrFail($id);
         $hydrants = Hydrant::all();
+
         return Inertia::render('fire-safety/inspection/hydrant/Edit', [
             'inspection' => $inspections,
             'hydrants' => $hydrants,
@@ -157,23 +163,23 @@ class HydrantInspectionController extends Controller implements HasMiddleware
     public function update(Request $request, $id)
     {
         $inspection = HydrantInspection::findOrFail($id);
-        $fileName = 'inspeksi_' . time() . '.jpg';
+        $fileName = 'inspeksi_'.time().'.jpg';
 
         $validated = $request->validate([
             'hydrant_id' => ['required', 'exists:hydrant,id'],
-            'regu'       => ['required', Rule::in(['PAGI', 'SIANG', 'MALAM', 'MIDDLE'])],
-            'valve_machino_coupling'     => ['nullable', 'string', 'max:150'],
+            'regu' => ['required', Rule::in(['PAGI', 'SIANG', 'MALAM', 'MIDDLE'])],
+            'valve_machino_coupling' => ['nullable', 'string', 'max:150'],
             'nama_petugas' => ['required', 'string', 'max:150'],
             'fire_hose_machino_coupling' => ['nullable', 'string', 'max:150'],
-            'selang_hydrant'             => ['nullable', 'string', 'max:150'],
-            'noozle_hydrant'             => ['nullable', 'string', 'max:150'],
-            'kaca_box_hydrant'           => ['nullable', 'string', 'max:150'],
-            'kunci_box_hydrant'          => ['nullable', 'string', 'max:150'],
-            'box_hydrant'                => ['nullable', 'string', 'max:150'],
-            'alarm'                      => ['nullable', 'string', 'max:150'],
+            'selang_hydrant' => ['nullable', 'string', 'max:150'],
+            'noozle_hydrant' => ['nullable', 'string', 'max:150'],
+            'kaca_box_hydrant' => ['nullable', 'string', 'max:150'],
+            'kunci_box_hydrant' => ['nullable', 'string', 'max:150'],
+            'box_hydrant' => ['nullable', 'string', 'max:150'],
+            'alarm' => ['nullable', 'string', 'max:150'],
             'foto_hydrant' => ['nullable', function ($attribute, $value, $fail) {
-                if ($value && !Str::startsWith($value, 'data:image')) {
-                    $fail('The ' . $attribute . ' must be a valid base64 image.');
+                if ($value && ! Str::startsWith($value, 'data:image')) {
+                    $fail('The '.$attribute.' must be a valid base64 image.');
                 }
             }],
         ]);
@@ -224,6 +230,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
 
         return redirect()->route('inspection.hydrant.index')->with('success', 'Inspeksi Hydrant berhasil dihapus.');
     }
+
     public function rekap(Request $request)
     {
         $bulan = $request->input('bulan', now()->format('m'));
@@ -241,6 +248,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
             'tahun' => $tahun,
         ]);
     }
+
     public function exportPdf(Request $request)
     {
         $bulan = $request->input('bulan', now()->format('m'));
@@ -253,6 +261,7 @@ class HydrantInspectionController extends Controller implements HasMiddleware
             ->get();
 
         $pdf = Pdf::loadView('report.rekap_hydrant', compact('rekap', 'bulan', 'tahun'));
+
         return $pdf->stream("rekap_hydrant_{$bulan}_{$tahun}.pdf");
     }
 }

@@ -6,7 +6,6 @@ use App\Models\Apar;
 use App\Models\AparInspection;
 use App\Models\Hydrant;
 use App\Models\HydrantInspection;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -48,13 +47,14 @@ class DashboardController extends Controller
             ->orderByDesc('tanggal_inspeksi')
             ->take(5)
             ->get();
+
         return Inertia::render('dashboard', [
             'totalApar' => $totalApar,
             'totalHydrant' => $totalHydrant,
             'totalAparExpired' => $totalAparExpired,
             'totalInspeksiApar' => $totalInspeksiApar,
             'dataGrafikInspeksi' => $dataGrafik,
-            'aparBermasalah' => $aparBermasalah->append('foto_apar_url')
+            'aparBermasalah' => $aparBermasalah->append('foto_apar_url'),
         ]);
     }
 }

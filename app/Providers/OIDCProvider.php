@@ -66,7 +66,7 @@ class OIDCProvider extends BaseProvider
 
         $response = $this->getHttpClient()->get($url, [
             RequestOptions::HEADERS => [
-                'Authorization' => 'Bearer ' . $token,
+                'Authorization' => 'Bearer '.$token,
                 'Accept' => 'application/json',
             ],
         ]);

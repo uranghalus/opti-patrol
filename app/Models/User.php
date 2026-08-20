@@ -9,7 +9,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, HasRoles, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -50,14 +50,17 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
     public function karyawan()
     {
         return $this->belongsTo(Karyawan::class, 'karyawan_id', 'id_karyawan');
     }
+
     public function getUserPermisions()
     {
-        return $this->getAllPermissions()->mapWithKeys(fn($permission) => [$permission['name'] => true]);
+        return $this->getAllPermissions()->mapWithKeys(fn ($permission) => [$permission['name'] => true]);
     }
+
     // 👇 tambahkan ini
     protected static function booted()
     {

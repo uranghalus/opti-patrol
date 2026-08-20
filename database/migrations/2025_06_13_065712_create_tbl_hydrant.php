@@ -13,21 +13,21 @@ return new class extends Migration
     {
         Schema::create('hydrant', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_unik')->unique(); // Contoh: "HYD-001"
-            $table->string('kode_hydrant', 25)->unique(); // Contoh: "HYD Utama"
-            $table->string('ukuran');
-            $table->string('lantai')->nullable(); // Contoh: "Lantai 1"
+            $table->string('kode_unik')->unique();
+            $table->string('kode_hydrant', 25)->unique();
+            $table->string('ukuran')->nullable()->default('');
+            $table->string('lantai')->nullable()->index();
             $table->string('lokasi');
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
 
         Schema::create('hydrant_inspections', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('hydrant_id')->nullable()->constrained('hydrant')->onDelete('set null');
-            $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null'); // Pemeriksa
-            $table->enum('regu', ['PAGI', 'SIANG', 'MALAM', 'MIDDLE'])->default('PAGI');
-            $table->string('nama_petugas', 150)->nullable(); // Bisa input bebas
+            $table->foreignId('hydrant_id')->nullable()->constrained('hydrant')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->enum('regu', ['PAGI', 'SIANG', 'MALAM', 'MIDDLE'])->default('PAGI')->index();
+            $table->string('nama_petugas', 150)->nullable();
             $table->string('valve_machino_coupling', 150)->nullable();
             $table->string('fire_hose_machino_coupling', 150)->nullable();
             $table->string('selang_hydrant', 150)->nullable();
@@ -37,7 +37,7 @@ return new class extends Migration
             $table->string('box_hydrant', 150)->nullable();
             $table->string('alarm', 150)->nullable();
             $table->string('foto_hydrant')->nullable();
-            $table->timestamp('tanggal_inspeksi')->default(now());
+            $table->timestamp('tanggal_inspeksi')->useCurrent()->index();
             $table->timestamps();
         });
     }

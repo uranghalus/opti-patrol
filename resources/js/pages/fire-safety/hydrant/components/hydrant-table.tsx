@@ -1,8 +1,10 @@
-import { DataTablePagination } from '@/components/datatable-pagination';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import {
+import type {
     ColumnDef,
     ColumnFiltersState,
+    RowData,
+    SortingState,
+    VisibilityState} from '@tanstack/react-table';
+import {
     flexRender,
     getCoreRowModel,
     getFacetedRowModel,
@@ -10,13 +12,12 @@ import {
     getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
-    RowData,
-    SortingState,
-    useReactTable,
-    VisibilityState,
+    useReactTable
 } from '@tanstack/react-table';
 import { useState } from 'react';
-import { Hydrant } from '@/types';
+import { DataTablePagination } from '@/components/datatable-pagination';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import type { Hydrant } from '@/types';
 import HydrantToolbar from './hydrant-toolbar';
 
 declare module '@tanstack/react-table' {

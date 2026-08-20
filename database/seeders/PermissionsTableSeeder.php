@@ -10,43 +10,56 @@ class PermissionsTableSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // permission users
-        Permission::create(['name' => 'users index', 'guard_name' => 'web']);
-        Permission::create(['name' => 'users create', 'guard_name' => 'web']);
-        Permission::create(['name' => 'users edit', 'guard_name' => 'web']);
-        Permission::create(['name' => 'users delete', 'guard_name' => 'web']);
+        $permissions = [
+            // User Management
+            'users index', 'users create', 'users edit', 'users delete',
 
-        // permission roles
-        Permission::create(['name' => 'roles index', 'guard_name' => 'web']);
-        Permission::create(['name' => 'roles create', 'guard_name' => 'web']);
-        Permission::create(['name' => 'roles edit', 'guard_name' => 'web']);
-        Permission::create(['name' => 'roles delete', 'guard_name' => 'web']);
+            // Role Management
+            'roles index', 'roles create', 'roles edit', 'roles delete',
 
-        // permission permissions
-        Permission::create(['name' => 'permissions index', 'guard_name' => 'web']);
-        Permission::create(['name' => 'permissions create', 'guard_name' => 'web']);
-        Permission::create(['name' => 'permissions edit', 'guard_name' => 'web']);
-        Permission::create(['name' => 'permissions delete', 'guard_name' => 'web']);
+            // Permission Management
+            'permissions index', 'permissions create', 'permissions edit', 'permissions delete',
 
-        // permission APAR
-        Permission::create(['name' => 'apar.view', 'guard_name' => 'web']);
-        Permission::create(['name' => 'apar.create', 'guard_name' => 'web']);
-        Permission::create(['name' => 'apar.edit', 'guard_name' => 'web']);
-        Permission::create(['name' => 'apar.delete', 'guard_name' => 'web']);
-        Permission::create(['name' => 'apar.generate-qr', 'guard_name' => 'web']);
-        Permission::create(['name' => 'apar.export', 'guard_name' => 'web']);
+            // APAR Master
+            'apar.view', 'apar.create', 'apar.edit', 'apar.delete',
+            'apar.generate-qr', 'apar.export', 'apar.import',
 
-        // permission Hydrant
-        Permission::create(['name' => 'hydrant.view', 'guard_name' => 'web']);
-        Permission::create(['name' => 'hydrant.create', 'guard_name' => 'web']);
-        Permission::create(['name' => 'hydrant.edit', 'guard_name' => 'web']);
-        Permission::create(['name' => 'hydrant.delete', 'guard_name' => 'web']);
-        Permission::create(['name' => 'hydrant.generate-qr', 'guard_name' => 'web']);
-        Permission::create(['name' => 'hydrant.export', 'guard_name' => 'web']);
+            // Hydrant Master
+            'hydrant.view', 'hydrant.create', 'hydrant.edit', 'hydrant.delete',
+            'hydrant.generate-qr', 'hydrant.export', 'hydrant.import',
+
+            // Cekpoint Security Master
+            'cekpoin-security.view', 'cekpoin-security.create', 'cekpoin-security.edit',
+            'cekpoin-security.delete', 'cekpoin-security.generate-qr',
+            'cekpoin-security.export', 'cekpoin-security.import',
+
+            // APAR Inspection
+            'apar-inspection.view', 'apar-inspection.create', 'apar-inspection.edit',
+            'apar-inspection.delete', 'apar-inspection.export',
+
+            // Hydrant Inspection
+            'hydrant-inspection.view', 'hydrant-inspection.create', 'hydrant-inspection.edit',
+            'hydrant-inspection.delete', 'hydrant-inspection.export',
+
+            // CP Security Inspection (Patrol Security)
+            'cp-inspection.view', 'cp-inspection.create', 'cp-inspection.edit',
+            'cp-inspection.delete', 'cp-inspection.export',
+
+            // Master Data
+            'department index', 'department create', 'department edit', 'department delete',
+            'jabatan index', 'jabatan create', 'jabatan edit', 'jabatan delete',
+            'karyawan index', 'karyawan create', 'karyawan edit', 'karyawan delete',
+            'unit bisnis index', 'unit bisnis create', 'unit bisnis edit', 'unit bisnis delete',
+
+            // Reports / Rekap
+            'reports apar-rekap', 'reports hydrant-rekap', 'reports cekpoint-rekap',
+            'reports apar-pdf', 'reports hydrant-pdf', 'reports cekpoint-pdf',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        }
     }
 }

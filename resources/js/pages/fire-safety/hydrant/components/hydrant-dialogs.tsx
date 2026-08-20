@@ -1,10 +1,11 @@
 import { useDialog } from '@/context/dialog-context';
-import { Hydrant } from '@/types';
+import type { Hydrant } from '@/types';
 import HydrantActionDialog from './hydrant-action-dialog';
 import HydrantDeleteDialog from './hydrant-delete-dialog';
 
 export default function HydrantDialogs() {
     const { open, setOpen, currentRow } = useDialog<Hydrant>();
+
     return (
         <>
             <HydrantActionDialog key={'hydrant-add'} open={open === 'add'} onOpenChange={() => setOpen('add')} />

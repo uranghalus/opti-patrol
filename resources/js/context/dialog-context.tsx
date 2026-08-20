@@ -20,7 +20,9 @@ export function DialogProvider<T>({ children }: Props) {
     const [currentRow, setCurrentRow] = useState<T | null>(null);
 
     return (
-        <DialogContext.Provider value={{ open, setOpen, currentRow, setCurrentRow }}>
+        <DialogContext.Provider
+            value={{ open, setOpen, currentRow, setCurrentRow }}
+        >
             {children}
         </DialogContext.Provider>
     );
@@ -28,6 +30,10 @@ export function DialogProvider<T>({ children }: Props) {
 
 export function useDialog<T>() {
     const context = useContext(DialogContext);
-    if (!context) throw new Error('useDialog must be used within <DialogProvider>');
+
+    if (!context) {
+        throw new Error('useDialog must be used within <DialogProvider>');
+    }
+
     return context as DialogContextType<T>;
 }

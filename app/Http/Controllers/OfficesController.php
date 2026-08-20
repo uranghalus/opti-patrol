@@ -8,7 +8,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 
 class OfficesController extends Controller implements HasMiddleware
@@ -22,6 +21,7 @@ class OfficesController extends Controller implements HasMiddleware
             new Middleware('permission:unit-bisnis.delete', only: ['destroy']),
         ];
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -31,7 +31,7 @@ class OfficesController extends Controller implements HasMiddleware
         $offices = Office::latest()->get();
 
         return Inertia::render('master/offices/index', [
-            'offices' => $offices
+            'offices' => $offices,
         ]);
     }
 
@@ -52,9 +52,9 @@ class OfficesController extends Controller implements HasMiddleware
         //
         $validated = $request->validated();
         Office::create($validated);
+
         return redirect()->route('unit-bisnis.index')->with('success', 'Data kantor berhasil ditambahkan.');
     }
-
 
     /**
      * Show the form for editing the specified resource.
@@ -63,6 +63,7 @@ class OfficesController extends Controller implements HasMiddleware
     {
         //
         $office = Office::find($id);
+
         return Inertia::render('master/offices/Edit', [
             'office' => $office,
         ]);
@@ -75,7 +76,7 @@ class OfficesController extends Controller implements HasMiddleware
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'office_code' => 'required|string|max:20|unique:tbl_offices,office_code,' . $id,
+            'office_code' => 'required|string|max:20|unique:tbl_offices,office_code,'.$id,
             // tambah validasi lain sesuai kebutuhan
         ]);
 
@@ -97,13 +98,14 @@ class OfficesController extends Controller implements HasMiddleware
     {
         //
         $office = Office::findOrFail($id);
-        if (!$office) {
+        if (! $office) {
             return redirect()->back()->with('error', 'Data tidak ditemukan.');
         }
         $office->delete();
 
         return redirect()->back()->with('success', 'Data berhasil dihapus.');
     }
+
     public function bulkDelete(Request $request)
     {
         $request->validate([

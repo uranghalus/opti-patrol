@@ -20,14 +20,16 @@ class JabatanController extends Controller implements HasMiddleware
             new Middleware('permission:jabatan.delete', only: ['destroy']),
         ];
     }
+
     public function index()
     {
         $jabatans = Jabatan::all();
 
         return Inertia::render('master/jabatan/Index', [
-            'jabatans' => $jabatans
+            'jabatans' => $jabatans,
         ]);
     }
+
     public function create()
     {
 
@@ -41,25 +43,29 @@ class JabatanController extends Controller implements HasMiddleware
         $validated = $request->validate([
             'nama_jabatan' => 'required|string|max:255',
             'roles' => 'nullable|array',
-            'roles.*' => 'string|exists:roles,name'
+            'roles.*' => 'string|exists:roles,name',
         ]);
         $jabatan = Jabatan::create([
             'nama_jabatan' => $validated['nama_jabatan'],
-            'roles'        => $validated['roles'] ?? [],
+            'roles' => $validated['roles'] ?? [],
         ]);
+
         return redirect()->back()->with('success', 'Jabatan created successfully.');
     }
 
     public function show($id)
     {
         $jabatan = Jabatan::with('department')->findOrFail($id);
+
         return Inertia::render('Jabatan/Show', [
-            'jabatan' => $jabatan
+            'jabatan' => $jabatan,
         ]);
     }
+
     public function edit($id)
     {
         $jabatan = Jabatan::findOrFail($id);
+
         return Inertia::render('master/jabatan/Edit', [
             'jabatan' => $jabatan,
         ]);
@@ -72,6 +78,7 @@ class JabatanController extends Controller implements HasMiddleware
             'nama_jabatan' => 'sometimes|required|string|max:255',
         ]);
         $jabatan->update($validated);
+
         return redirect()->back()->with('success', 'Jabatan updated successfully.');
     }
 
@@ -79,8 +86,10 @@ class JabatanController extends Controller implements HasMiddleware
     {
         $jabatan = Jabatan::findOrFail($id);
         $jabatan->delete();
+
         return redirect()->back()->with('success', 'Jabatan deleted successfully.');
     }
+
     public function bulkDelete(Request $request)
     {
         $request->validate([

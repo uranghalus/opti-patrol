@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CPInspection;
 use App\Models\CekPointSecurity;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
-use Inertia\Inertia;
+use App\Models\CPInspection;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Inertia\Inertia;
 use Intervention\Image\Laravel\Facades\Image;
 
 class CPSecurityInspectionController extends Controller
@@ -22,6 +22,7 @@ class CPSecurityInspectionController extends Controller
     public function index()
     {
         $inspections = CPInspection::with(['cekPoint', 'user.karyawan'])->latest()->get();
+
         return Inertia::render('cekpoint/Index', [
             'inspections' => $inspections,
         ]);
@@ -33,6 +34,7 @@ class CPSecurityInspectionController extends Controller
     public function create()
     {
         $cekPoints = CekPointSecurity::all();
+
         return Inertia::render('cekpoint/Create', [
             'cekpoints' => $cekPoints,
         ]);
@@ -48,7 +50,7 @@ class CPSecurityInspectionController extends Controller
 
         $validated = $request->validate([
             'kode_cp' => ['required', 'exists:cek_point_security,id'],
-            'regu'    => ['required', Rule::in(['PAGI', 'SIANG', 'MALAM', 'MIDDLE'])],
+            'regu' => ['required', Rule::in(['PAGI', 'SIANG', 'MALAM', 'MIDDLE'])],
             'kondisi' => ['nullable', 'string', 'max:150'],
             'nama_petugas' => ['required', 'string', 'max:150'],
             'bocoran' => ['nullable', 'string', 'max:150'],
@@ -74,7 +76,9 @@ class CPSecurityInspectionController extends Controller
         foreach ($fotoFields as $field) {
             $value = $request->$field ?? null;
 
-            if (!$value) continue;
+            if (! $value) {
+                continue;
+            }
 
             // --- CASE 1: base64 dari Android/web ---
             if (is_string($value) && Str::startsWith($value, 'data:image/')) {
@@ -87,7 +91,7 @@ class CPSecurityInspectionController extends Controller
                 }
 
                 $compressed = $image->toJpeg(75);
-                $path = "inspection/cekpoint/{$field}_" . time() . ".jpg";
+                $path = "inspection/cekpoint/{$field}_".time().'.jpg';
                 Storage::disk('s3')->put($path, (string) $compressed);
 
                 $validated[$field] = $path;
@@ -98,7 +102,7 @@ class CPSecurityInspectionController extends Controller
                 $file = $request->file($field);
                 $path = $file->storeAs(
                     'inspection/cekpoint',
-                    "{$field}_" . time() . '.' . $file->getClientOriginalExtension(),
+                    "{$field}_".time().'.'.$file->getClientOriginalExtension(),
                     's3'
                 );
                 $validated[$field] = $path;
@@ -117,6 +121,7 @@ class CPSecurityInspectionController extends Controller
     public function show($id)
     {
         $inspection = CPInspection::with(['cekPoint', 'user.karyawan'])->findOrFail($id);
+
         return Inertia::render('cekpoint/Show', [
             'inspection' => $inspection,
         ]);
@@ -129,6 +134,7 @@ class CPSecurityInspectionController extends Controller
     {
         $inspection = CPInspection::with(['cekPoint', 'user.karyawan'])->findOrFail($id);
         $cekPoints = CekPointSecurity::all();
+
         return Inertia::render('cekpoint/Edit', [
             'inspection' => $inspection,
             'cekPoints' => $cekPoints,
@@ -144,7 +150,7 @@ class CPSecurityInspectionController extends Controller
 
         $validated = $request->validate([
             'kode_cp' => ['required', 'exists:cek_point_security,id'],
-            'regu'    => ['required', 'in:PAGI,SIANG,MALAM,MIDDLE'],
+            'regu' => ['required', 'in:PAGI,SIANG,MALAM,MIDDLE'],
             'kondisi' => ['nullable', 'string', 'max:150'],
             'foto_kondisi' => ['nullable', 'string'],
             'bocoran' => ['nullable', 'string', 'max:150'],
@@ -186,7 +192,7 @@ class CPSecurityInspectionController extends Controller
                 }
 
                 $compressed = $image->toJpeg(75);
-                $path = "inspection/cekpoint/{$fotoField}_" . time() . ".jpg";
+                $path = "inspection/cekpoint/{$fotoField}_".time().'.jpg';
                 Storage::disk('s3')->put($path, (string) $compressed);
                 $validated[$fotoField] = $path;
             } else {
@@ -194,7 +200,6 @@ class CPSecurityInspectionController extends Controller
                 unset($validated[$fotoField]);
             }
         }
-
 
         $inspection->update($validated);
 
@@ -217,7 +222,7 @@ class CPSecurityInspectionController extends Controller
                 'foto_kerusakan_fasum',
                 'foto_potensi_bahaya_api',
                 'foto_potensi_bahaya_keorang',
-                'foto_orang_mencurigakan'
+                'foto_orang_mencurigakan',
             ] as $fotoField
         ) {
             if ($inspection->$fotoField && Storage::disk('s3')->exists($inspection->$fotoField)) {
@@ -264,6 +269,7 @@ class CPSecurityInspectionController extends Controller
 
         return $pdf->stream("rekap_cp_{$bulan}_{$tahun}.pdf");
     }
+
     // Print-friendly view (opens a simple HTML page suitable for window.print)
     public function print(Request $request)
     {
@@ -276,7 +282,7 @@ class CPSecurityInspectionController extends Controller
             'nama_petugas',
             'regu',
             'kondisi',
-            'tanggal_patroli'
+            'tanggal_patroli',
         ]);
 
         if ($type === 'week') {

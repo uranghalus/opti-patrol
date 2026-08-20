@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, FileSpreadsheet, Upload } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Hydrant } from '@/types';
 
 interface HydrantRow {
@@ -24,7 +24,10 @@ export default function HydrantUploadExcel() {
 
     const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (!file) return;
+
+        if (!file) {
+return;
+}
 
         const reader = new FileReader();
         reader.onload = (evt) => {
@@ -38,6 +41,7 @@ export default function HydrantUploadExcel() {
                 if (!item.kode_unik || !item.kode_hydrant || !item.ukuran || !item.lokasi) {
                     acc.push(index);
                 }
+
                 return acc;
             }, []);
 
@@ -163,6 +167,7 @@ export default function HydrantUploadExcel() {
                                     <tbody>
                                         {items.map((item, idx) => {
                                             const invalid = errors.includes(idx);
+
                                             return (
                                                 <tr
                                                     key={idx}

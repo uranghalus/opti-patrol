@@ -16,6 +16,7 @@ class Departments extends Model
      * @var list<string>
      */
     protected $table = 'tbl_departments';
+
     protected $fillable = ['department_code', 'name', 'office_id'];
 
     public function office()

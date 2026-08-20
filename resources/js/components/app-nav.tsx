@@ -13,8 +13,8 @@ const navGroups: NavItem[] = [
     {
         title: 'Role Management',
         items: [
-            { title: 'Permission List', href: '/role-management/permission-list' },
-            { title: 'Role List', href: '/role-management/role-list' },
+            { title: 'Role List', href: '/role-management' },
+            { title: 'Permission List', href: '/permission-management' },
         ],
     },
     {
@@ -30,7 +30,10 @@ const navGroups: NavItem[] = [
     {
         title: 'Fire Safety',
         items: [
-            { title: 'Data CP Security', href: '/fire-safety/cekpoin-security' },
+            {
+                title: 'Data CP Security',
+                href: '/fire-safety/cekpoin-security',
+            },
             { title: 'Data APAR', href: '/fire-safety/apar' },
             { title: 'Data Hydrant', href: '/fire-safety/hydrant' },
         ],
@@ -40,7 +43,10 @@ const navGroups: NavItem[] = [
         items: [
             { title: 'Inspeksi APAR', href: '/inspection/apar' },
             { title: 'Inspeksi Hydrant', href: '/inspection/hydrant' },
-            { title: 'Inspeksi Cekpoint', href: '/inspection/cekpoint-security' },
+            {
+                title: 'Inspeksi Cekpoint',
+                href: '/inspection/cekpoint-security',
+            },
         ],
     },
     {
@@ -48,7 +54,10 @@ const navGroups: NavItem[] = [
         items: [
             { title: 'Laporan Rekap APAR', href: '/reports/apar-rekap' },
             { title: 'Laporan Rekap Hydrant', href: '/reports/hydrant-rekap' },
-            { title: 'Laporan Rekap Cekpoint', href: '/reports/cekpoint-rekap' },
+            {
+                title: 'Laporan Rekap Cekpoint',
+                href: '/reports/cekpoint-rekap',
+            },
         ],
     },
 ];
@@ -58,7 +67,9 @@ function DropdownNav({ item }: { item: NavItem }) {
     const ref = useRef<HTMLDivElement>(null);
     const { isCurrentUrl } = useCurrentUrl();
 
-    const isActive = item.items?.some((child) => child.href && isCurrentUrl(child.href));
+    const isActive = item.items?.some(
+        (child) => child.href && isCurrentUrl(child.href),
+    );
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -81,10 +92,15 @@ function DropdownNav({ item }: { item: NavItem }) {
                 )}
             >
                 {item.title}
-                <ChevronDown className={cn('size-3.5 transition-transform duration-200', open && 'rotate-180')} />
+                <ChevronDown
+                    className={cn(
+                        'size-3.5 transition-transform duration-200',
+                        open && 'rotate-180',
+                    )}
+                />
             </button>
             {open && (
-                <div className="neu-dropdown absolute left-0 top-full z-50 mt-2 w-56 py-1.5">
+                <div className="neu-dropdown absolute top-full left-0 z-50 mt-2 w-56 py-1.5">
                     {item.items?.map((child) => (
                         <Link
                             key={child.title}
@@ -93,7 +109,9 @@ function DropdownNav({ item }: { item: NavItem }) {
                             onClick={() => setOpen(false)}
                             className={cn(
                                 'neu-dropdown-item',
-                                child.href && isCurrentUrl(child.href) && 'neu-dropdown-active',
+                                child.href &&
+                                    isCurrentUrl(child.href) &&
+                                    'neu-dropdown-active',
                             )}
                         >
                             {child.title}
@@ -122,7 +140,11 @@ export function AppNav() {
                                 prefetch
                                 className={cn(
                                     'neu-nav-item text-sm font-medium',
-                                    item.href && useCurrentUrl().isCurrentUrl(item.href) && 'neu-nav-active',
+                                    item.href &&
+                                        useCurrentUrl().isCurrentUrl(
+                                            item.href,
+                                        ) &&
+                                        'neu-nav-active',
                                 )}
                             >
                                 {item.title}

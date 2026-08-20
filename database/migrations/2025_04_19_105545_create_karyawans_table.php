@@ -20,27 +20,37 @@ return new class extends Migration
             $table->text('alamat');
             $table->string('no_ktp', 16)->unique();
             $table->string('telp', 16)->nullable();
-            $table->unsignedBigInteger('jabatan_id')->nullable();
-
-            $table->foreign('jabatan_id')
-                ->references('id')
-                ->on('tbl_jabatan')
-                ->onDelete('set null');
-            $table->unsignedBigInteger('department_id')->nullable();
-            $table->foreign('department_id')
-                ->references('id')
-                ->on('tbl_departments')
-                ->onDelete('set null');
+            $table->foreignId('jabatan_id')
+                ->nullable()
+                ->constrained('tbl_jabatan')
+                ->nullOnDelete();
+            $table->foreignId('department_id')
+                ->nullable()
+                ->constrained('tbl_departments')
+                ->nullOnDelete();
             $table->string('call_sign')->nullable();
-            $table->date('tmk'); // tanggal mulai kerja
-            $table->string('status_karyawan', 16);
+            $table->date('tmk');
+            $table->string('status_karyawan', 16)->index();
             $table->text('keterangan')->nullable();
             $table->string('user_image', 150)->nullable();
             $table->timestamp('create_date')->nullable();
-            $table->unsignedBigInteger('create_id_user')->nullable();
+            $table->foreignId('create_id_user')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamp('modified_date')->nullable();
-            $table->unsignedBigInteger('modified_id_user')->nullable();
+            $table->foreignId('modified_id_user')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
             $table->timestamps();
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreign('karyawan_id')
+                ->references('id_karyawan')
+                ->on('tbl_karyawans')
+                ->nullOnDelete();
         });
     }
 
@@ -49,6 +59,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['karyawan_id']);
+        });
+
         Schema::dropIfExists('tbl_karyawans');
     }
 };

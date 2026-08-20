@@ -41,43 +41,64 @@ class CPInspection extends Model
 
     public function getFotoKondisiUrlAttribute()
     {
-        if (!$this->foto_kondisi) return null;
+        if (! $this->foto_kondisi) {
+            return null;
+        }
+
         return Storage::disk('s3')->url($this->foto_kondisi);
     }
 
     public function getFotoBocoranUrlAttribute()
     {
-        if (!$this->foto_bocoran) return null;
+        if (! $this->foto_bocoran) {
+            return null;
+        }
+
         return Storage::disk('s3')->url($this->foto_bocoran);
     }
 
     public function getFotoPeneranganLampuUrlAttribute()
     {
-        if (!$this->foto_penerangan_lampu) return null;
+        if (! $this->foto_penerangan_lampu) {
+            return null;
+        }
+
         return Storage::disk('s3')->url($this->foto_penerangan_lampu);
     }
 
     public function getFotoKerusakanFasumUrlAttribute()
     {
-        if (!$this->foto_kerusakan_fasum) return null;
+        if (! $this->foto_kerusakan_fasum) {
+            return null;
+        }
+
         return Storage::disk('s3')->url($this->foto_kerusakan_fasum);
     }
 
     public function getFotoPotensiBahayaApiUrlAttribute()
     {
-        if (!$this->foto_potensi_bahaya_api) return null;
+        if (! $this->foto_potensi_bahaya_api) {
+            return null;
+        }
+
         return Storage::disk('s3')->url($this->foto_potensi_bahaya_api);
     }
 
     public function getFotoPotensiBahayaKeorangUrlAttribute()
     {
-        if (!$this->foto_potensi_bahaya_keorang) return null;
+        if (! $this->foto_potensi_bahaya_keorang) {
+            return null;
+        }
+
         return Storage::disk('s3')->url($this->foto_potensi_bahaya_keorang);
     }
 
     public function getFotoOrangMencurigakanUrlAttribute()
     {
-        if (!$this->foto_orang_mencurigakan) return null;
+        if (! $this->foto_orang_mencurigakan) {
+            return null;
+        }
+
         return Storage::disk('s3')->url($this->foto_orang_mencurigakan);
     }
 
@@ -96,6 +117,7 @@ class CPInspection extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
     // 🔥 Jika mau auto-append semua foto setiap kali
     protected $appends = [
         'foto_kondisi_url',

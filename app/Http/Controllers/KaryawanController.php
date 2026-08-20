@@ -14,7 +14,6 @@ use Intervention\Image\Laravel\Facades\Image;
 
 class KaryawanController extends Controller implements HasMiddleware
 {
-
     public static function middleware()
     {
         return [
@@ -24,6 +23,7 @@ class KaryawanController extends Controller implements HasMiddleware
             new Middleware('permission:karyawan.delete', only: ['destroy']),
         ];
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -33,10 +33,11 @@ class KaryawanController extends Controller implements HasMiddleware
         $karyawans = Karyawan::with(['department', 'jabatan'])->latest()->get();
         $departments = Departments::all(['id', 'name']);
         $jabatan = Jabatan::all();
+
         return Inertia::render('master/karyawan/index', [
             'karyawans' => $karyawans,
             'departments' => $departments,
-            'jabatans' => $jabatan
+            'jabatans' => $jabatan,
         ]);
     }
 
@@ -48,9 +49,10 @@ class KaryawanController extends Controller implements HasMiddleware
         //
         $departments = Departments::all(['id', 'name']);
         $jabatan = Jabatan::all();
+
         return Inertia::render('master/karyawan/Create', [
             'departments' => $departments,
-            'jabatans' => $jabatan
+            'jabatans' => $jabatan,
         ]);
     }
 
@@ -64,22 +66,22 @@ class KaryawanController extends Controller implements HasMiddleware
             'nik' => 'required|string|max:255|unique:tbl_karyawans,nik',
             'no_ktp' => 'nullable|string|max:16|unique:tbl_karyawans,no_ktp',
             'nama' => 'required|string|max:255',
-            'nama_alias'     => 'nullable|string|max:255',
-            'gender'         => 'required|in:L,P',
-            'alamat'         => 'nullable|string|max:255',
-            'department_id'  => 'required|exists:tbl_departments,id',
-            'jabatan_id'     => 'nullable|exists:tbl_jabatan,id',
+            'nama_alias' => 'nullable|string|max:255',
+            'gender' => 'required|in:L,P',
+            'alamat' => 'nullable|string|max:255',
+            'department_id' => 'required|exists:tbl_departments,id',
+            'jabatan_id' => 'nullable|exists:tbl_jabatan,id',
             'status_karyawan' => 'nullable|in:aktif,tidak_aktif,cuti,resign',
-            'tmk'            => 'nullable|date',
-            'call_sign'      => 'nullable|string|max:255',
-            'keterangan'     => 'nullable|string|max:255',
-            'telp'           => 'nullable|string|max:255',
-            'user_image'     => 'nullable|image|max:2048', // max 2MB
+            'tmk' => 'nullable|date',
+            'call_sign' => 'nullable|string|max:255',
+            'keterangan' => 'nullable|string|max:255',
+            'telp' => 'nullable|string|max:255',
+            'user_image' => 'nullable|image|max:2048', // max 2MB
         ]);
 
         // Simpan file jika ada
         if ($request->hasFile('user_image')) {
-            $filename = uniqid() . '.webp';
+            $filename = uniqid().'.webp';
             $path = "uploads/karyawan/{$filename}";
 
             $convertedImage = Image::read($request->file('user_image'))->toWebp(80);
@@ -101,9 +103,10 @@ class KaryawanController extends Controller implements HasMiddleware
     {
         //
         $karyawan = Karyawan::with(['department', 'jabatan'])->findOrFail($id);
-        if (!$karyawan) {
+        if (! $karyawan) {
             return redirect()->back()->with('error', 'Karyawan not found.');
         }
+
         return Inertia::render('master/karyawan/Show', [
             'karyawan' => $karyawan,
         ]);
@@ -115,16 +118,17 @@ class KaryawanController extends Controller implements HasMiddleware
     public function edit($id)
     {
         $karyawan = Karyawan::with(['department', 'jabatan'])->findOrFail($id);
-        if (!$karyawan) {
+        if (! $karyawan) {
             return redirect()->back()->with('error', 'Karyawan not found.');
         }
         //
         $departments = Departments::all(['id', 'name']);
         $jabatan = Jabatan::all();
+
         return Inertia::render('master/karyawan/Edit', [
             'karyawan' => $karyawan,
             'departments' => $departments,
-            'jabatans' => $jabatan
+            'jabatans' => $jabatan,
         ]);
     }
 
@@ -137,7 +141,7 @@ class KaryawanController extends Controller implements HasMiddleware
 
         // Validasi data
         $validatedData = $request->validate([
-            'nik' => 'required|string|max:20|unique:tbl_karyawans,nik,' . $karyawan->id_karyawan . ',id_karyawan',
+            'nik' => 'required|string|max:20|unique:tbl_karyawans,nik,'.$karyawan->id_karyawan.',id_karyawan',
             'nama' => 'required|string|max:100',
             'nama_alias' => 'nullable|string|max:100',
             'gender' => 'required|string|max:10',
@@ -161,7 +165,7 @@ class KaryawanController extends Controller implements HasMiddleware
             }
 
             // Simpan file baru
-            $filename = uniqid() . '.webp';
+            $filename = uniqid().'.webp';
             $path = "uploads/karyawan/{$filename}";
 
             $convertedImage = Image::read($request->file('user_image'))->toWebp(80);
@@ -181,13 +185,14 @@ class KaryawanController extends Controller implements HasMiddleware
     public function destroy($id)
     {
         $karyawan = Karyawan::findOrFail($id);
-        if (!$karyawan) {
+        if (! $karyawan) {
             return redirect()->back()->with('error', 'Karyawan not found.');
         }
         if ($karyawan->user_image && Storage::disk('public')->exists($karyawan->user_image)) {
             Storage::disk('public')->delete($karyawan->user_image);
         }
         $karyawan->delete();
+
         return redirect()->back()->with('success', 'Karyawan deleted successfully.');
     }
 }

@@ -14,8 +14,8 @@ export function NavUser() {
     const { auth } = usePage().props;
 
     if (!auth.user) {
-return null;
-}
+        return null;
+    }
 
     return (
         <DropdownMenu>
@@ -38,14 +38,35 @@ return null;
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     className="cursor-pointer text-destructive focus:text-destructive"
-                    onSelect={() => document.getElementById('nav-logout-form')?.requestSubmit()}
+                    onSelect={() =>
+                        document
+                            .getElementById('nav-logout-form')
+                            ?.requestSubmit()
+                    }
                 >
                     <LogOut className="mr-2 size-4" />
                     Keluar
                 </DropdownMenuItem>
             </DropdownMenuContent>
-            <form id="nav-logout-form" action="/logout" method="POST" className="hidden">
-                <input type="hidden" name="_token" value={typeof document !== 'undefined' ? (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '' : ''} />
+            <form
+                id="nav-logout-form"
+                action="/logout"
+                method="POST"
+                className="hidden"
+            >
+                <input
+                    type="hidden"
+                    name="_token"
+                    value={
+                        typeof document !== 'undefined'
+                            ? ((
+                                  document.querySelector(
+                                      'meta[name="csrf-token"]',
+                                  ) as HTMLMetaElement
+                              )?.content ?? '')
+                            : ''
+                    }
+                />
             </form>
         </DropdownMenu>
     );

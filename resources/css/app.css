@@ -57,7 +57,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-    --background: #E8EEF2;
+    --background: #e8eef2;
     --foreground: #4a5a66;
     --card: #ffffff;
     --card-foreground: #4a5a66;
@@ -98,7 +98,10 @@
     }
     body {
         @apply bg-background text-foreground;
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family:
+            system-ui,
+            -apple-system,
+            sans-serif;
     }
 }
 
@@ -107,9 +110,17 @@
    ═══════════════════════════════════════════════════════════ */
 .app-bg {
     background:
-        radial-gradient(ellipse 80% 50% at 0% 0%, rgba(77, 184, 232, 0.06) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 60% at 100% 100%, rgba(195, 204, 212, 0.08) 0%, transparent 50%),
-        #E8EEF2;
+        radial-gradient(
+            ellipse 80% 50% at 0% 0%,
+            rgba(77, 184, 232, 0.06) 0%,
+            transparent 50%
+        ),
+        radial-gradient(
+            ellipse 60% 60% at 100% 100%,
+            rgba(195, 204, 212, 0.08) 0%,
+            transparent 50%
+        ),
+        #e8eef2;
     min-height: 100dvh;
 }
 
@@ -192,7 +203,7 @@
 }
 
 .neu-dropdown-item:hover {
-    background: rgba(77, 184, 232, 0.10);
+    background: rgba(77, 184, 232, 0.1);
     color: #4db8e8;
 }
 
@@ -480,8 +491,16 @@
 /* ─── Stage: busy gradient so glass has something to refract ─── */
 .preview-stage {
     background:
-        radial-gradient(120% 120% at 100% 0%, rgba(77, 184, 232, 0.12), transparent 60%),
-        linear-gradient(135deg, rgba(195, 204, 212, 0.3), rgba(232, 238, 242, 0.5));
+        radial-gradient(
+            120% 120% at 100% 0%,
+            rgba(77, 184, 232, 0.12),
+            transparent 60%
+        ),
+        linear-gradient(
+            135deg,
+            rgba(195, 204, 212, 0.3),
+            rgba(232, 238, 242, 0.5)
+        );
     border-radius: 16px;
 }
 
@@ -546,7 +565,7 @@
 }
 
 .insp-pagination-btn:hover:not(:disabled) {
-    background: rgba(77, 184, 232, 0.10);
+    background: rgba(77, 184, 232, 0.1);
     color: #4db8e8;
     border-color: rgba(77, 184, 232, 0.2);
     box-shadow:
@@ -619,18 +638,32 @@
    Animations
    ═══════════════════════════════════════════════════════════ */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes slideRight {
-    from { transform: translateX(-100%); }
-    to { transform: translateX(0); }
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
 }
 
 @keyframes floatIn {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .float-in {

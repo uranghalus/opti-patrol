@@ -14,8 +14,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { HasAnyPermission } from '@/lib/permission';
+import { cn } from '@/lib/utils';
 import type { Apar } from '@/types';
 
 interface Props {
@@ -77,10 +77,22 @@ export default function AparIndex({ apar, filters, filterOptions }: Props) {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         const params = new URLSearchParams();
-        if (search) params.set('search', search);
-        if (jenis) params.set('jenis', jenis);
-        if (lantai) params.set('lantai', lantai);
-        if (size) params.set('size', size);
+
+        if (search) {
+params.set('search', search);
+}
+
+        if (jenis) {
+params.set('jenis', jenis);
+}
+
+        if (lantai) {
+params.set('lantai', lantai);
+}
+
+        if (size) {
+params.set('size', size);
+}
 
         startTransition(() => {
             router.get(`/fire-safety/apar?${params.toString()}`, { preserveScroll: true });
@@ -101,7 +113,11 @@ export default function AparIndex({ apar, filters, filterOptions }: Props) {
 
     const handleMassPrint = () => {
         const params = new URLSearchParams();
-        if (selectedLantai) params.set('lantai', selectedLantai);
+
+        if (selectedLantai) {
+params.set('lantai', selectedLantai);
+}
+
         params.set('batch', selectedBatch);
         window.open(`/fire-safety/apar/generate-mass-qr?${params.toString()}`, '_blank');
     };

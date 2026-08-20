@@ -23,7 +23,7 @@ class RolesTableSeeder extends Seeder
 
         // Give superadmin all permissions
         $superAdmin->givePermissionTo(Permission::all());
-        
+
         // Give admin all permissions except superadmin specific ones if any
         $admin->givePermissionTo(Permission::all());
 

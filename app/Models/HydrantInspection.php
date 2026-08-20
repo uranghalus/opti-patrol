@@ -31,9 +31,12 @@ class HydrantInspection extends Model
     protected $casts = [
         'tanggal_inspeksi' => 'datetime',
     ];
+
     public function getFotoHydrantUrlAttribute(): ?string
     {
-        if (!$this->foto_hydrant) return null;
+        if (! $this->foto_hydrant) {
+            return null;
+        }
 
         return Storage::disk('s3')->url($this->foto_hydrant); // jika file public
     }

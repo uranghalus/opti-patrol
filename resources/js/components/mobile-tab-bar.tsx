@@ -1,10 +1,5 @@
 import { Link } from '@inertiajs/react';
-import {
-    LayoutDashboard,
-    ListTodo,
-    FileText,
-    User,
-} from 'lucide-react';
+import { LayoutDashboard, ListTodo, FileText, User } from 'lucide-react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
 import { dashboard } from '@/routes';
@@ -36,7 +31,10 @@ export function MobileTabBar() {
                         key={tab.label}
                         href={tab.href}
                         prefetch
-                        className={cn('mobile-tab', active && 'mobile-tab-active')}
+                        className={cn(
+                            'mobile-tab',
+                            active && 'mobile-tab-active',
+                        )}
                     >
                         <Icon className="size-5" />
                         <span className="mobile-tab-label">{tab.label}</span>

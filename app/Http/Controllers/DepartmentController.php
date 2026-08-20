@@ -20,6 +20,7 @@ class DepartmentController extends Controller implements HasMiddleware
             new Middleware('permission:department.delete', only: ['destroy']),
         ];
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -28,7 +29,6 @@ class DepartmentController extends Controller implements HasMiddleware
         //
         $departments = Departments::with('office:id,office_code,name,address')->latest()->get();
         // Ambil data offices untuk dropdown
-
 
         return Inertia::render('master/departments/index', [
             'departments' => $departments,
@@ -42,8 +42,9 @@ class DepartmentController extends Controller implements HasMiddleware
     {
         //
         $offices = Office::all();
+
         return Inertia::render('master/departments/Create', [
-            'offices' => $offices
+            'offices' => $offices,
         ]);
     }
 
@@ -80,6 +81,7 @@ class DepartmentController extends Controller implements HasMiddleware
         //
         $departments = Departments::find($id);
         $offices = Office::all();
+
         return Inertia::render('master/departments/Edit', [
             'department' => $departments,
             'offices' => $offices,
@@ -92,7 +94,7 @@ class DepartmentController extends Controller implements HasMiddleware
     public function update(Request $request, $id)
     {
         $departments = Departments::findOrFail($id);
-        if (!$departments) {
+        if (! $departments) {
             return redirect()->back()->with('error', 'Department not found.');
         }
         //
@@ -103,6 +105,7 @@ class DepartmentController extends Controller implements HasMiddleware
         ]);
 
         $departments->update($validated);
+
         return redirect()->back()->with('success', 'Role updated successfully.');
     }
 
@@ -112,12 +115,14 @@ class DepartmentController extends Controller implements HasMiddleware
     public function destroy($id)
     {
         $departments = Departments::findOrFail($id);
-        if (!$departments) {
+        if (! $departments) {
             return redirect()->back()->with('error', 'Department not found.');
         }
         $departments->delete();
+
         return redirect()->back()->with('success', 'Department deleted successfully.');
     }
+
     public function bulkDelete(Request $request)
     {
         $request->validate([

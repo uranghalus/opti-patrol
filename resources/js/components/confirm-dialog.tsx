@@ -1,5 +1,5 @@
+import type { JSX, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { JSX, ReactNode } from 'react';
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -41,6 +41,7 @@ export default function ConfirmDialog(props: ConfirmDialogProps) {
         handleConfirm,
         ...actions
     } = props;
+
     return (
         <AlertDialog {...actions}>
             <AlertDialogContent className={cn(className && className)}>
@@ -52,8 +53,14 @@ export default function ConfirmDialog(props: ConfirmDialogProps) {
                 </AlertDialogHeader>
                 {children}
                 <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isLoading}>{cancelBtnText ?? 'Cancel'}</AlertDialogCancel>
-                    <Button variant={destructive ? 'destructive' : 'default'} onClick={handleConfirm} disabled={disabled || isLoading}>
+                    <AlertDialogCancel disabled={isLoading}>
+                        {cancelBtnText ?? 'Cancel'}
+                    </AlertDialogCancel>
+                    <Button
+                        variant={destructive ? 'destructive' : 'default'}
+                        onClick={handleConfirm}
+                        disabled={disabled || isLoading}
+                    >
                         {confirmText ?? 'Continue'}
                     </Button>
                 </AlertDialogFooter>

@@ -16,6 +16,7 @@ class UserController extends Controller
     {
         //
         $user = User::with(['karyawan.jabatan', 'roles'])->get();
+
         return Inertia::render('master/user/Index', [
             'user' => $user,
         ]);
@@ -28,6 +29,7 @@ class UserController extends Controller
     {
         //
         $karyawans = Karyawan::with('jabatan')->get();
+
         return Inertia::render('master/user/Create', [
             'karyawans' => $karyawans,
         ]);
@@ -48,7 +50,7 @@ class UserController extends Controller
         $karyawan = Karyawan::with('jabatan')->findOrFail($validated['karyawan_id']);
 
         // Validasi tambahan jika no_ktp kosong
-        if (!$karyawan->no_ktp) {
+        if (! $karyawan->no_ktp) {
             return back()->withErrors(['karyawan_id' => 'Karyawan belum memiliki nomor KTP.']);
         }
 
@@ -59,17 +61,19 @@ class UserController extends Controller
             'password' => strtolower(str_replace(' ', '', $karyawan->nama)),
         ]);
 
-        if (!empty($karyawan->jabatan->roles)) {
+        if (! empty($karyawan->jabatan->roles)) {
             $user->assignRole($karyawan->jabatan->roles);
         }
 
         return redirect()->route('pengguna.index')->with('success', 'User berhasil dibuat.');
     }
+
     private function generateEmailFromKaryawan($karyawan): string
     {
         // Bisa ubah jadi lebih kompleks sesuai aturan email perusahaan
-        return strtolower(str_replace(' ', '_', $karyawan->nama)) . '@appdutamall.com';
+        return strtolower(str_replace(' ', '_', $karyawan->nama)).'@appdutamall.com';
     }
+
     /**
      * Display the specified resource.
      */
@@ -86,6 +90,7 @@ class UserController extends Controller
         //
         $user = User::with(['karyawan.jabatan'])->findOrFail($id);
         $karyawans = Karyawan::with('jabatan')->get();
+
         return Inertia::render('master/user/Edit', [
             'user' => $user,
             'karyawans' => $karyawans,
@@ -101,7 +106,7 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $validated = $request->validate([
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'karyawan_id' => 'required|exists:tbl_karyawans,id_karyawan',
             // validasi lain jika perlu
         ]);

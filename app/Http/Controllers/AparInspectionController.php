@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Intervention\Image\Laravel\Facades\Image;
-use Intervention\Image\Encoders\JpegEncoder;
 
 class AparInspectionController extends Controller implements HasMiddleware
 {
@@ -28,6 +27,7 @@ class AparInspectionController extends Controller implements HasMiddleware
             new Middleware('permission:apar-inspection.export', only: ['exportPdf']),
         ];
     }
+
     /**
      * Display a listing of the resource.
      */
@@ -35,6 +35,7 @@ class AparInspectionController extends Controller implements HasMiddleware
     {
         //
         $aparInspections = AparInspection::with(['apar', 'user.karyawan'])->get();
+
         return Inertia::render('fire-safety/inspection/apar/index', [
             'aparInspections' => $aparInspections,
         ]);
@@ -47,6 +48,7 @@ class AparInspectionController extends Controller implements HasMiddleware
     {
         //
         $AparData = Apar::all();
+
         return Inertia::render('fire-safety/inspection/apar/Create', [
             'aparData' => $AparData,
         ]);
@@ -59,14 +61,14 @@ class AparInspectionController extends Controller implements HasMiddleware
     {
         try {
             $validated = $request->validate([
-                'apar_id'            => ['required', 'exists:apar,id'],
-                'regu'               => ['required', 'in:PAGI,MIDDLE,SIANG,MALAM'],
+                'apar_id' => ['required', 'exists:apar,id'],
+                'regu' => ['required', 'in:PAGI,MIDDLE,SIANG,MALAM'],
                 'tanggal_kadaluarsa' => ['required', 'date'],
-                'tanggal_refill'     => ['required', 'date'],
-                'kondisi'            => ['required', 'string', 'max:150'],
-                'catatan'            => ['nullable', 'string'],
-                'nama_petugas'       => ['required', 'string', 'max:150'],
-                'foto_apar'          => ['required'], // file OR base64
+                'tanggal_refill' => ['required', 'date'],
+                'kondisi' => ['required', 'string', 'max:150'],
+                'catatan' => ['nullable', 'string'],
+                'nama_petugas' => ['required', 'string', 'max:150'],
+                'foto_apar' => ['required'], // file OR base64
             ]);
 
             $validated['regu'] = str_replace('REGU ', 'Regu ', $validated['regu']);
@@ -83,24 +85,23 @@ class AparInspectionController extends Controller implements HasMiddleware
 
                 $image = Image::read($request->file('foto_apar'));
 
-                $filename = 'apar-' . time() . '-' . Str::random(5) . '.jpg';
+                $filename = 'apar-'.time().'-'.Str::random(5).'.jpg';
                 $path = "inspection/apar/{$filename}";
                 $uploadedFile = $image->toJpeg(75);
                 Storage::disk('s3')->put($path, $uploadedFile);
-
 
                 $finalPath = $path;
             }
 
             // CASE 2 — BASE64
-            else if (Str::startsWith($request->foto_apar, 'data:image')) {
+            elseif (Str::startsWith($request->foto_apar, 'data:image')) {
 
                 $data = explode(',', $request->foto_apar)[1];
                 $decoded = base64_decode($data);
 
                 $image = Image::read($decoded);
 
-                $filename = 'apar-' . time() . '-' . Str::random(5) . '.jpg';
+                $filename = 'apar-'.time().'-'.Str::random(5).'.jpg';
                 $path = "inspection/apar/{$filename}";
 
                 $compressed = $image->toJpeg(75);
@@ -141,12 +142,12 @@ class AparInspectionController extends Controller implements HasMiddleware
     {
         //
         $inspection = AparInspection::with(['apar', 'user.karyawan'])->findOrFail($id);
-        if (!$inspection) {
+        if (! $inspection) {
             return redirect()->back()->with('error', 'Data not found.');
         }
 
         return Inertia::render('fire-safety/inspection/apar/Show', [
-            'aparData' => $inspection->append('foto_apar_url')
+            'aparData' => $inspection->append('foto_apar_url'),
         ]);
     }
 
@@ -171,18 +172,18 @@ class AparInspectionController extends Controller implements HasMiddleware
     public function update(Request $request, $id)
     {
         $inspection = AparInspection::findOrFail($id);
-        $fileName = 'inspeksi_' . time() . '.jpg';
+        $fileName = 'inspeksi_'.time().'.jpg';
 
         $validated = $request->validate([
-            'apar_id'            => ['required', 'exists:apar,id'],
-            'regu'               => ['required', 'in:PAGI, MIDDLE, SIANG, MALAM'],
+            'apar_id' => ['required', 'exists:apar,id'],
+            'regu' => ['required', 'in:PAGI, MIDDLE, SIANG, MALAM'],
             'tanggal_kadaluarsa' => ['required', 'date'],
-            'tanggal_refill'     => ['required', 'date'],
-            'kondisi'            => ['required', 'string', 'max:150'],
-            'catatan'            => ['required', 'string'],
-            'foto_apar'          => ['nullable', function ($attribute, $value, $fail) {
-                if ($value && !Str::startsWith($value, 'data:image')) {
-                    $fail('The ' . $attribute . ' must be a valid base64 image.');
+            'tanggal_refill' => ['required', 'date'],
+            'kondisi' => ['required', 'string', 'max:150'],
+            'catatan' => ['required', 'string'],
+            'foto_apar' => ['nullable', function ($attribute, $value, $fail) {
+                if ($value && ! Str::startsWith($value, 'data:image')) {
+                    $fail('The '.$attribute.' must be a valid base64 image.');
                 }
             }],
         ]);
@@ -237,6 +238,7 @@ class AparInspectionController extends Controller implements HasMiddleware
 
         return redirect()->route('inspection.apar.index')->with('success', 'Data berhasil dihapus!');
     }
+
     public function rekap(Request $request)
     {
         $bulan = $request->input('bulan', now()->format('m'));
@@ -246,12 +248,14 @@ class AparInspectionController extends Controller implements HasMiddleware
             ->whereYear('tanggal_inspeksi', $tahun)
             ->orderByDesc('tanggal_inspeksi')
             ->get();
+
         return Inertia::render('Laporan/apar-rekap', [
             'rekap' => $rekap,
             'bulan' => $bulan,
             'tahun' => $tahun,
         ]);
     }
+
     public function exportPdf(Request $request)
     {
         $bulan = $request->input('bulan', now()->format('m'));
@@ -264,6 +268,7 @@ class AparInspectionController extends Controller implements HasMiddleware
             ->get();
 
         $pdf = Pdf::loadView('report.rekap_apar', compact('rekap', 'bulan', 'tahun'));
+
         return $pdf->stream("rekap_apar_{$bulan}_{$tahun}.pdf");
     }
 }
