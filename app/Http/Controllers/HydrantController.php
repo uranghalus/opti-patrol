@@ -35,13 +35,37 @@ class HydrantController extends Controller implements HasMiddleware
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $hydrantdata = Hydrant::with('user.karyawan')->get();
+        $query = Hydrant::with('user.karyawan');
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('kode_unik', 'like', "%{$search}%")
+                    ->orWhere('kode_hydrant', 'like', "%{$search}%")
+                    ->orWhere('lokasi', 'like', "%{$search}%")
+                    ->orWhere('lantai', 'like', "%{$search}%");
+            });
+        }
+        if ($tipe = $request->input('tipe')) {
+            $query->where('tipe', $tipe);
+        }
+        if ($lantai = $request->input('lantai')) {
+            $query->where('lantai', $lantai);
+        }
+
+        $hydrantdata = $query
+            ->orderBy('id', 'desc')
+            ->paginate(12)
+            ->withQueryString();
 
         return Inertia::render('fire-safety/hydrant/index', [
             'hydrantdata' => $hydrantdata,
+            'filters' => $request->only(['search', 'tipe', 'lantai']),
+            'filterOptions' => [
+                'lantai' => Hydrant::select('lantai')->distinct()->whereNotNull('lantai')->where('lantai', '!=', '')->pluck('lantai'),
+            ],
         ]);
     }
 

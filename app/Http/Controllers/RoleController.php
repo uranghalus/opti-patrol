@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller implements HasMiddleware
@@ -21,126 +22,91 @@ class RoleController extends Controller implements HasMiddleware
         ];
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        //
-        $roles = Role::select('id', 'name')->with('permissions:id,name')->get();
-        return Inertia::render('role-management/roles/index', [
-            'roles' => $roles
+        $query = Role::query();
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', "%{$request->search}%");
+        }
+
+        $roles = Role::with('permissions:id,name')
+            ->when($request->search, fn($q) => $q->where('name', 'like', "%{$request->search}%"))
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('role-management/index', [
+            'roles' => $roles,
+            'filters' => $request->only('search'),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(Request $request)
     {
-        //
-        $data = Permission::orderBy('name')->pluck(
-            'name',
-            'id'
-        );
-        $collection = collect($data);
-        $permissions = $collection->groupBy(function ($item, $key) {
-            // Memecah string menjadi array kata-kata
-            $words = explode(' ', $item);
-
-            // Mengambil kata pertama
-            return $words[0];
-        });
-        return Inertia::render('role-management/roles/Create', [
-            'permissions' => $permissions
-        ]);
+        return Inertia::render('role-management/create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
-        // validate request
-        $request->validate([
-            'name' => 'required|min:3|max:255|unique:roles',
-            'selectedPermissions' => 'required|array|min:1',
+        $validated = $request->validate([
+            'name' => 'required|string|min:3|max:255|unique:roles,name',
+            'permissions' => 'nullable|array',
         ]);
 
-        // create new role data
-        $role = Role::create(['name' => $request->name]);
-
-        // give permissions to role
-        $role->givePermissionTo($request->selectedPermissions);
-
-        // render view
-        return to_route('role.index');
-    }
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-        $role = Role::find($id);
-        $data = Permission::orderBy('name')->pluck('name', 'id');
-        $collection = collect($data);
-        $permissions = $collection->groupBy(function ($item, $key) {
-            // Memecah string menjadi array kata-kata
-            $words = explode(' ', $item);
-
-            // Mengambil kata pertama
-            return $words[0];
+        DB::transaction(function () use ($validated) {
+            $role = Role::create(['name' => $validated['name']]);
+            
+            if (!empty($validated['permissions'])) {
+                $role->givePermissionTo($validated['permissions']);
+            }
         });
 
-        // load permissions
-        $role->load('permissions');
-
-        // render view
-        return inertia('role-management/roles/Edit', ['role' => $role, 'permissions' => $permissions]);
+        return redirect()->route('role.index')->with('success', 'Role created successfully.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function edit(Role $role)
     {
-        //
-        $role = Role::findOrFail($id);
-        $request->validate([
-            'name' => 'required|min:3|max:255|unique:roles,name,' . $role->id,
-            'selectedPermissions' => 'required|array|min:1',
+        return Inertia::render('role-management/edit', [
+            'role' => $role->load('permissions'),
+        ]);
+    }
+
+    public function update(Request $request, Role $role)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|min:3|max:255|unique:roles,name,' . $role->id,
+            'permissions' => 'nullable|array',
         ]);
 
-        // update role data
-        $role->update(['name' => $request->name]);
+        DB::transaction(function () use ($role, $validated) {
+            $role->update(['name' => $validated['name']]);
+            
+            if (!empty($validated['permissions'])) {
+                $role->syncPermissions($validated['permissions']);
+            } else {
+                $role->permissions()->detach();
+            }
+        });
 
-        // give permissions to role
-        $role->syncPermissions($request->selectedPermissions);
-
-        // render view
-        return to_route('role.index');
+        return redirect()->route('role.index')->with('success', 'Role updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(Role $role)
     {
-        //
-        Role::destroy($id);
-        return back()->with('success', 'Role berhasil dihapus.');
+        $role->delete();
+
+        return back()->with('success', 'Role deleted successfully.');
     }
-    public function bulkDelete(Request $request)
+
+    public function bulkDestroy(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:roles,id',
         ]);
 
-        Role::whereIn('id', $request->ids)->delete();
+        Role::whereIn('id', $validated['ids'])->delete();
 
-        return back()->with('success', 'Role berhasil dihapus.');
+        return back()->with('success', 'Roles deleted successfully.');
     }
 }

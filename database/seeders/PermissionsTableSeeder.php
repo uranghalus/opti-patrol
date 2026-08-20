@@ -40,5 +40,13 @@ class PermissionsTableSeeder extends Seeder
         Permission::create(['name' => 'apar.delete', 'guard_name' => 'web']);
         Permission::create(['name' => 'apar.generate-qr', 'guard_name' => 'web']);
         Permission::create(['name' => 'apar.export', 'guard_name' => 'web']);
+
+        // permission Hydrant
+        Permission::create(['name' => 'hydrant.view', 'guard_name' => 'web']);
+        Permission::create(['name' => 'hydrant.create', 'guard_name' => 'web']);
+        Permission::create(['name' => 'hydrant.edit', 'guard_name' => 'web']);
+        Permission::create(['name' => 'hydrant.delete', 'guard_name' => 'web']);
+        Permission::create(['name' => 'hydrant.generate-qr', 'guard_name' => 'web']);
+        Permission::create(['name' => 'hydrant.export', 'guard_name' => 'web']);
     }
 }

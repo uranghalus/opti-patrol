@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\OIDCController;
 use App\Http\Controllers\AparController;
 use App\Http\Controllers\HydrantController;
+use App\Http\Controllers\RoleController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/auth/redirect')->name('home');
@@ -11,6 +12,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
     Route::inertia('inspection', 'inspection/index')->name('inspection');
     Route::inertia('reports', 'reports/index')->name('reports');
+
+    // Role & Permission Management
+    Route::prefix('role-management')->name('role.')->group(function () {
+        Route::resource('/', RoleController::class)->except(['show']);
+        Route::delete('/bulk-delete', [RoleController::class, 'bulkDestroy'])->name('bulk-destroy');
+    });
 
     // CRUD Data APAR
     Route::prefix('fire-safety/apar')->name('apar.')->group(function () {
@@ -32,6 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/filter-options', [HydrantController::class, 'getFilterOptions'])->name('filterOptions');
     });
 });
+
 Route::get('auth/redirect', [OIDCController::class, 'redirect'])->name('authsso');
 Route::get('auth/oidc/callback', [OIDCController::class, 'callback'])->name('ssocallback');
 Route::get('auth/error', function () {
@@ -39,4 +47,5 @@ Route::get('auth/error', function () {
     return response("<h1>Login Gagal</h1><p>{$message}</p><p><a href='/auth/redirect'>Coba lagi</a></p>", 500)
         ->header('Content-Type', 'text/html');
 })->name('auth.error');
+
 require __DIR__ . '/settings.php';
