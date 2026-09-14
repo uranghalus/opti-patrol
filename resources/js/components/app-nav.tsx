@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { ChevronDown } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import AppLogo from '@/components/app-logo';
@@ -87,7 +87,7 @@ function DropdownNav({ item }: { item: NavItem }) {
             <button
                 onClick={() => setOpen(!open)}
                 className={cn(
-                    'neu-nav-item flex items-center gap-1.5 text-sm font-medium',
+                    'neu-nav-item flex items-center gap-1.5',
                     isActive && 'neu-nav-active',
                 )}
             >
@@ -100,7 +100,7 @@ function DropdownNav({ item }: { item: NavItem }) {
                 />
             </button>
             {open && (
-                <div className="neu-dropdown absolute top-full left-0 z-50 mt-2 w-56 py-1.5">
+                <div className="neu-dropdown absolute top-full left-0 z-[99] mt-2 w-56 py-1.5">
                     {item.items?.map((child) => (
                         <Link
                             key={child.title}
@@ -124,9 +124,11 @@ function DropdownNav({ item }: { item: NavItem }) {
 }
 
 export function AppNav() {
+    const { isCurrentUrl } = useCurrentUrl();
+
     return (
-        <nav className="glass-nav sticky top-0 z-40 hidden lg:block">
-            <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
+        <nav className="glass-nav sticky top-0 z-[100] hidden lg:block">
+            <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between px-5 lg:px-8">
                 <AppLogo />
 
                 <div className="hidden items-center gap-1 lg:flex">
@@ -139,11 +141,9 @@ export function AppNav() {
                                 href={item.href ?? '#'}
                                 prefetch
                                 className={cn(
-                                    'neu-nav-item text-sm font-medium',
+                                    'neu-nav-item',
                                     item.href &&
-                                        useCurrentUrl().isCurrentUrl(
-                                            item.href,
-                                        ) &&
+                                        isCurrentUrl(item.href) &&
                                         'neu-nav-active',
                                 )}
                             >

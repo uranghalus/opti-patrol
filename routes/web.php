@@ -51,12 +51,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Fire Safety Master Data
     Route::prefix('fire-safety')->name('apar.')->group(function () {
-        Route::resource('apar', AparController::class)->parameters(['apar' => 'id'])->names('apar');
-        Route::get('/apar/{id}/generate-qr', [AparController::class, 'generateQRCode'])->name('generateQRCode');
+        // Fixed-path routes must be registered before the resource,
+        // otherwise GET /apar/{id} shadows them.
+        Route::get('/apar/filter-options', [AparController::class, 'getFilterOptions'])->name('filterOptions');
         Route::get('/apar/generate-mass-qr', [AparController::class, 'generateMassQRCode'])->name('generateMassQRCode');
         Route::get('/apar/upload-excel', [AparController::class, 'showUploadForm'])->name('uploadExcel');
         Route::post('/apar/import', [AparController::class, 'import'])->name('import');
-        Route::get('/apar/filter-options', [AparController::class, 'getFilterOptions'])->name('filterOptions');
+        Route::resource('apar', AparController::class)->parameters(['apar' => 'id'])->names('apar');
+        Route::get('/apar/{id}/generate-qr', [AparController::class, 'generateQRCode'])->name('generateQRCode');
     });
 
     Route::prefix('fire-safety')->name('hydrant.')->group(function () {

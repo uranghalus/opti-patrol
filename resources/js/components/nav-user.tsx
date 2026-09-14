@@ -26,7 +26,7 @@ export function NavUser() {
                 </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-                className="w-52 rounded-xl border border-border/30 bg-card/80 shadow-lg backdrop-blur-xl"
+                className="w-52 rounded-lg border border-border bg-popover shadow-[var(--shadow-md-stripe)]"
                 align="end"
             >
                 <DropdownMenuItem asChild>

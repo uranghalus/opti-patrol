@@ -1,19 +1,62 @@
-import { Head } from '@inertiajs/react';
-import { Link, router } from '@inertiajs/react';
-import { Plus, Search, Filter, Download, QrCode, Printer, X, Flame, MapPin, Layers, UserRound } from 'lucide-react';
-import { useEffect, useState, useTransition } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+/*
+ * DIRECTION CONTRACT — APAR index (Stripe world, mobile-first)
+ * THESIS: a field operations deck, not a desktop grid shrunk down — the
+ * action surface (search + filters) lives in a sticky deck at thumb level
+ * and every APAR is one tappable ledger row.
+ * OWN-WORLD: Stripe tokens — white cards, 1px #E5EDF5 borders, purple
+ * #533AFD actions, navy text; 44px touch targets, 8px gaps.
+ * STORY: inspector filters instantly via chips, scans the ledger, taps a
+ * row to edit; admins bulk-print QR labels without losing scroll position.
+ * FIRST VIEWPORT: header line, sticky deck with search + chips, first rows
+ * of the ledger. FORM: page revamp, code-led (pinned brief).
+ * FINISH: unreviewed and undocumented is unfinished; this build ends with
+ * the finish review, the verdict, and DESIGN.md.
+ */
+import { Head, Link, router } from '@inertiajs/react';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Flame,
+    MapPin,
+    Pencil,
+    Plus,
+    Printer,
+    QrCode,
+    Search,
+    SlidersHorizontal,
+    Trash2,
+    X,
+} from 'lucide-react';
+import { useEffect, useRef, useState, useTransition } from 'react';
+import type { ReactNode } from 'react';
+import ConfirmDialog from '@/components/confirm-dialog';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { HasAnyPermission } from '@/lib/permission';
 import { cn } from '@/lib/utils';
 import type { Apar } from '@/types';
@@ -42,85 +85,145 @@ interface Props {
 }
 
 const JENIS = ['CO2', 'Powder', 'Foam', 'Air'];
-const LANTAI = ['Lantai 1', 'Lantai 2', 'Lantai 3', 'Lantai 4', 'Lantai 5', 'Basement', 'Roof'];
+const LANTAI = [
+    'Lantai 1',
+    'Lantai 2',
+    'Lantai 3',
+    'Lantai 4',
+    'Lantai 5',
+    'Basement',
+    'Roof',
+];
 
-const getJenisColor = (j: string) => {
-    switch (j) {
-        case 'CO2':
-            return 'bg-red-500/10 text-red-600 ring-1 ring-red-500/20';
-        case 'Powder':
-            return 'bg-blue-500/10 text-blue-600 ring-1 ring-blue-500/20';
-        case 'Foam':
-            return 'bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20';
-        case 'Air':
-            return 'bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20';
-        default:
-            return 'bg-muted text-muted-foreground ring-1 ring-border';
-    }
+type FilterKey = 'jenis' | 'lantai' | 'size';
+
+const JENIS_DOT: Record<string, string> = {
+    CO2: 'bg-red-500',
+    Powder: 'bg-blue-500',
+    Foam: 'bg-amber-500',
+    Air: 'bg-emerald-500',
 };
 
-export default function AparIndex({ apar, filters, filterOptions }: Props) {
-    const [showFilters, setShowFilters] = useState(false);
-    const [isPending, startTransition] = useTransition();
+const getJenisDot = (jenis: string) =>
+    JENIS_DOT[jenis] ?? 'bg-muted-foreground';
 
+type LedgerRowProps = {
+    item: Apar;
+    canEdit: boolean;
+    canGenerateQr: boolean;
+    canDelete: boolean;
+    badge: (jenis: string) => ReactNode;
+    onDelete: (item: Apar) => void;
+};
+
+function LedgerRow({
+    item,
+    canEdit,
+    canGenerateQr,
+    canDelete,
+    badge,
+    onDelete,
+}: LedgerRowProps) {
+    const body = (
+        <>
+            <div
+                aria-hidden
+                className="grid size-11 shrink-0 place-items-center rounded-[4px] bg-muted"
+            >
+                <Flame className="size-5 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                    <p className="truncate font-mono text-[15px] font-medium text-foreground">
+                        {item.kode_apar}
+                    </p>
+                    {badge(item.jenis)}
+                </div>
+                <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-muted-foreground">
+                    <MapPin className="size-3.5 shrink-0" aria-hidden />
+                    <span className="truncate">{item.lokasi}</span>
+                </p>
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                    {item.lantai ?? '—'} · {Number(item.size)} kg
+                </p>
+            </div>
+            {canEdit && (
+                <ChevronRight
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                />
+            )}
+        </>
+    );
+
+    return (
+        <li className="flex items-center gap-1 pr-1">
+            {canEdit ? (
+                <Link
+                    href={`/fire-safety/apar/${item.id}/edit`}
+                    className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 active:bg-accent"
+                >
+                    {body}
+                </Link>
+            ) : (
+                <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3">
+                    {body}
+                </div>
+            )}
+
+            {(canGenerateQr || canDelete) && (
+                <div className="flex shrink-0 items-center">
+                    {canGenerateQr && (
+                        <Button
+                            asChild
+                            variant="ghost"
+                            size="icon"
+                            className="size-11 rounded-[4px] text-muted-foreground hover:text-foreground"
+                        >
+                            <a
+                                href={`/fire-safety/apar/${item.id}/generate-qr`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={`Cetak QR ${item.kode_apar}`}
+                            >
+                                <QrCode className="size-4" />
+                            </a>
+                        </Button>
+                    )}
+                    {canDelete && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="size-11 rounded-[4px] text-muted-foreground hover:text-destructive"
+                            aria-label={`Hapus ${item.kode_apar}`}
+                            onClick={() => onDelete(item)}
+                        >
+                            <Trash2 className="size-4" />
+                        </Button>
+                    )}
+                </div>
+            )}
+        </li>
+    );
+}
+
+export default function AparIndex({ apar, filters, filterOptions }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [jenis, setJenis] = useState(filters.jenis || '');
     const [lantai, setLantai] = useState(filters.lantai || '');
     const [size, setSize] = useState(filters.size || '');
+    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+    const [qrOpen, setQrOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<Apar | null>(null);
+    const [isPending, startTransition] = useTransition();
 
-    // Bulk-print (cetak QR massal) toolbar state
+    // Bulk-print (cetak QR massal) state
     const [lantaiList, setLantaiList] = useState<string[]>([]);
     const [batchCount, setBatchCount] = useState(1);
     const [selectedLantai, setSelectedLantai] = useState('');
     const [selectedBatch, setSelectedBatch] = useState('1');
 
-    const handleSearch = (e: React.FormEvent) => {
-        e.preventDefault();
-        const params = new URLSearchParams();
-
-        if (search) {
-params.set('search', search);
-}
-
-        if (jenis) {
-params.set('jenis', jenis);
-}
-
-        if (lantai) {
-params.set('lantai', lantai);
-}
-
-        if (size) {
-params.set('size', size);
-}
-
-        startTransition(() => {
-            router.get(`/fire-safety/apar?${params.toString()}`, { preserveScroll: true });
-        });
-    };
-
-    const clearFilters = () => {
-        setSearch('');
-        setJenis('');
-        setLantai('');
-        setSize('');
-        startTransition(() => {
-            router.get('/fire-safety/apar', { preserveScroll: true });
-        });
-    };
-
-    const hasActiveFilters = search || jenis || lantai || size;
-
-    const handleMassPrint = () => {
-        const params = new URLSearchParams();
-
-        if (selectedLantai) {
-params.set('lantai', selectedLantai);
-}
-
-        params.set('batch', selectedBatch);
-        window.open(`/fire-safety/apar/generate-mass-qr?${params.toString()}`, '_blank');
-    };
+    const searchRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         fetch('/fire-safety/apar/filter-options')
@@ -132,409 +235,812 @@ params.set('lantai', selectedLantai);
             .catch(() => {});
     }, []);
 
-    const handleDelete = (id: number, kodeApar: string) => {
-        if (confirm(`Hapus APAR ${kodeApar}?`)) {
-            router.delete(`/fire-safety/apar/${id}`, { preserveScroll: true });
+    const applyFilters = (next: {
+        search?: string;
+        jenis?: string;
+        lantai?: string;
+        size?: string;
+    }) => {
+        const params = new URLSearchParams();
+        const s = next.search ?? search;
+        const j = next.jenis ?? jenis;
+        const l = next.lantai ?? lantai;
+        const z = next.size ?? size;
+
+        if (s) {
+            params.set('search', s);
         }
+
+        if (j) {
+            params.set('jenis', j);
+        }
+
+        if (l) {
+            params.set('lantai', l);
+        }
+
+        if (z) {
+            params.set('size', z);
+        }
+
+        const qs = params.toString();
+        startTransition(() => {
+            router.get(`/fire-safety/apar${qs ? `?${qs}` : ''}`, undefined, {
+                preserveScroll: true,
+                preserveState: true,
+            });
+        });
     };
 
-    // Hero "climate dial" — ambient fill (72%) with live total in the centre.
-    const dialFill = 72;
-    const dialCirc = 2 * Math.PI * 15.5;
+    const submitSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        searchRef.current?.blur();
+        applyFilters({ search });
+    };
+
+    const setFilter = (key: FilterKey, value: string) => {
+        if (key === 'jenis') {
+            setJenis(value);
+        } else if (key === 'lantai') {
+            setLantai(value);
+        } else {
+            setSize(value);
+        }
+
+        applyFilters({ [key]: value });
+    };
+
+    const clearAll = () => {
+        setSearch('');
+        setJenis('');
+        setLantai('');
+        setSize('');
+        startTransition(() => {
+            router.get('/fire-safety/apar', undefined, {
+                preserveScroll: true,
+                preserveState: true,
+            });
+        });
+    };
+
+    const hasActiveFilters = Boolean(search || jenis || lantai || size);
+    const activeChips: { key: FilterKey; label: string }[] = [];
+
+    if (jenis) {
+        activeChips.push({ key: 'jenis', label: `Jenis: ${jenis}` });
+    }
+
+    if (lantai) {
+        activeChips.push({ key: 'lantai', label: lantai });
+    }
+
+    if (size) {
+        activeChips.push({ key: 'size', label: `${size} kg` });
+    }
+
+    const handleMassPrint = () => {
+        const params = new URLSearchParams();
+
+        if (selectedLantai) {
+            params.set('lantai', selectedLantai);
+        }
+
+        params.set('batch', selectedBatch);
+        window.open(
+            `/fire-safety/apar/generate-mass-qr?${params.toString()}`,
+            '_blank',
+        );
+    };
+
+    const confirmDelete = () => {
+        if (!deleteTarget) {
+            return;
+        }
+
+        router.delete(`/fire-safety/apar/${deleteTarget.id}`, {
+            preserveScroll: true,
+        });
+        setDeleteTarget(null);
+    };
+
+    const prevUrl = apar.links.find((l) => l.label === 'Previous')?.url ?? null;
+    const nextUrl = apar.links.find((l) => l.label === 'Next')?.url ?? null;
+
+    const canCreate = HasAnyPermission(['apar.create']);
+    const canEdit = HasAnyPermission(['apar.edit']);
+    const canDelete = HasAnyPermission(['apar.delete']);
+    const canGenerateQr = HasAnyPermission(['apar.generate-qr']);
+
+    const jenisBadge = (value: string) => (
+        <span className="inline-flex h-6 items-center gap-1.5 rounded-[2px] bg-muted px-2 text-xs font-medium text-foreground">
+            <span
+                aria-hidden
+                className={cn('size-1.5 rounded-full', getJenisDot(value))}
+            />
+            {value}
+        </span>
+    );
 
     return (
         <>
             <Head title="Data APAR" />
 
-            <div className="space-y-6 animate-in fade-in slide-in-from-y-4 duration-400">
-                {/* ── Hero (glass, floating) ── */}
-                <section className="glass-panel relative overflow-hidden px-5 py-6 sm:px-8 sm:py-7 animate-in fade-in duration-400">
-                    <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-                    <div className="pointer-events-none absolute -bottom-20 left-10 h-40 w-40 rounded-full bg-secondary/30 blur-3xl" />
+            <div className="float-in space-y-4">
+                {/* ── Page header (compact; the deck carries the weight) ── */}
+                <header className="flex items-end justify-between gap-4">
+                    <div>
+                        <h1 className="flex items-center gap-2 text-lg font-medium tracking-tight text-foreground sm:text-2xl">
+                            <Flame className="size-5 text-primary" />
+                            Data APAR
+                        </h1>
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                            Alat Pemadam Api Ringan · {apar.total} unit terdata
+                        </p>
+                    </div>
+                    {canCreate && (
+                        <Button
+                            asChild
+                            className="btn-soft-primary hidden h-10 shrink-0 active:scale-[0.98] sm:inline-flex"
+                        >
+                            <Link href="/fire-safety/apar/create">
+                                <Plus className="size-4" />
+                                Tambah APAR
+                            </Link>
+                        </Button>
+                    )}
+                </header>
 
-                    <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="flex items-center gap-5">
-                            <div className="neu-dial relative grid h-20 w-20 shrink-0 place-items-center rounded-full">
-                                <svg viewBox="0 0 36 36" className="absolute inset-0 h-full w-full -rotate-90">
-                                    <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(195,204,212,0.55)" strokeWidth="3" />
-                                    <circle
-                                        cx="18"
-                                        cy="18"
-                                        r="15.5"
-                                        fill="none"
-                                        stroke="#4db8e8"
-                                        strokeWidth="3"
-                                        strokeLinecap="round"
-                                        strokeDasharray={`${(dialFill / 100) * dialCirc} ${dialCirc}`}
-                                    />
-                                </svg>
-                                <span className="text-xl font-bold text-foreground">{apar.total}</span>
-                            </div>
+                {/* ── Sticky action deck (mobile) / toolbar card (desktop) ── */}
+                <div
+                    className={cn(
+                        'z-[3] -mx-3 bg-background/95 px-3 py-2 backdrop-blur-sm sm:-mx-4 sm:px-4',
+                        'max-lg:sticky max-lg:top-14',
+                        'lg:mx-0 lg:rounded-lg lg:border lg:border-border lg:bg-card lg:px-4 lg:py-3 lg:shadow-[var(--shadow-lg-stripe)]',
+                    )}
+                >
+                    <form
+                        role="search"
+                        onSubmit={submitSearch}
+                        className="flex items-center gap-2"
+                    >
+                        <div className="relative flex-1">
+                            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                ref={searchRef}
+                                inputMode="search"
+                                aria-label="Cari kode, lokasi, atau lantai"
+                                placeholder="Cari kode, lokasi, lantai…"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="h-11 rounded-[4px] pl-9"
+                            />
+                        </div>
+
+                        {/* Mobile: filter sheet trigger */}
+                        <Button
+                            type="button"
+                            aria-label="Filter"
+                            aria-expanded={filterSheetOpen}
+                            onClick={() => setFilterSheetOpen(true)}
+                            className="relative size-11 shrink-0 rounded-[4px] border border-border bg-card p-0 text-foreground hover:bg-accent hover:text-accent-foreground lg:hidden"
+                        >
+                            <SlidersHorizontal className="size-4" />
+                            {activeChips.length > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 grid size-5 place-items-center rounded-full bg-primary text-[11px] font-medium text-primary-foreground">
+                                    {activeChips.length}
+                                </span>
+                            )}
+                        </Button>
+
+                        {/* Desktop: inline selects */}
+                        <div className="hidden items-center gap-2 lg:flex">
+                            <Select
+                                value={jenis || 'all'}
+                                onValueChange={(v) =>
+                                    setFilter('jenis', v === 'all' ? '' : v)
+                                }
+                            >
+                                <SelectTrigger
+                                    aria-label="Filter jenis"
+                                    className="h-11 w-[130px] rounded-[4px]"
+                                >
+                                    <SelectValue placeholder="Jenis" />
+                                </SelectTrigger>
+                                <SelectContent className="neu-dropdown">
+                                    <SelectItem value="all">
+                                        Semua Jenis
+                                    </SelectItem>
+                                    {(filterOptions.jenis.length
+                                        ? filterOptions.jenis
+                                        : JENIS
+                                    ).map((j) => (
+                                        <SelectItem key={j} value={j}>
+                                            {j}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={lantai || 'all'}
+                                onValueChange={(v) =>
+                                    setFilter('lantai', v === 'all' ? '' : v)
+                                }
+                            >
+                                <SelectTrigger
+                                    aria-label="Filter lantai"
+                                    className="h-11 w-[140px] rounded-[4px]"
+                                >
+                                    <SelectValue placeholder="Lantai" />
+                                </SelectTrigger>
+                                <SelectContent className="neu-dropdown">
+                                    <SelectItem value="all">
+                                        Semua Lantai
+                                    </SelectItem>
+                                    {LANTAI.map((l) => (
+                                        <SelectItem key={l} value={l}>
+                                            {l}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={size || 'all'}
+                                onValueChange={(v) =>
+                                    setFilter('size', v === 'all' ? '' : v)
+                                }
+                            >
+                                <SelectTrigger
+                                    aria-label="Filter ukuran"
+                                    className="h-11 w-[110px] rounded-[4px]"
+                                >
+                                    <SelectValue placeholder="Ukuran" />
+                                </SelectTrigger>
+                                <SelectContent className="neu-dropdown">
+                                    <SelectItem value="all">
+                                        Semua Ukuran
+                                    </SelectItem>
+                                    {filterOptions.sizes.map((s) => (
+                                        <SelectItem
+                                            key={s}
+                                            value={s.toString()}
+                                        >
+                                            {s} kg
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {canCreate && (
+                                <Button
+                                    asChild
+                                    variant="ghost"
+                                    className="neu-btn h-10"
+                                >
+                                    <Link href="/fire-safety/apar/upload-excel">
+                                        Import Excel
+                                    </Link>
+                                </Button>
+                            )}
+                        </div>
+                    </form>
+
+                    {/* Active filter chips (wrap, never clipped) */}
+                    {activeChips.length > 0 && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                            {activeChips.map((chip) => (
+                                <button
+                                    key={chip.key}
+                                    type="button"
+                                    onClick={() => setFilter(chip.key, '')}
+                                    className="inline-flex h-10 items-center gap-1.5 rounded-[2px] bg-secondary px-3 text-xs font-medium text-secondary-foreground transition-colors hover:bg-accent"
+                                >
+                                    {chip.label}
+                                    <X className="size-3" aria-hidden />
+                                    <span className="sr-only">
+                                        Hapus filter {chip.label}
+                                    </span>
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={clearAll}
+                                className="inline-flex h-10 items-center rounded-[2px] px-2 text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                            >
+                                Reset semua
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Mobile actions: primary CTA full-width, secondaries below ── */}
+                {canCreate && (
+                    <Button
+                        asChild
+                        className="btn-soft-primary h-11 w-full active:scale-[0.98] lg:hidden"
+                    >
+                        <Link href="/fire-safety/apar/create">
+                            <Plus className="size-4" />
+                            Tambah APAR
+                        </Link>
+                    </Button>
+                )}
+                <div className="flex gap-2 lg:hidden">
+                    {canCreate && (
+                        <Button
+                            asChild
+                            variant="ghost"
+                            className="neu-btn h-11 flex-1"
+                        >
+                            <Link href="/fire-safety/apar/upload-excel">
+                                Import Excel
+                            </Link>
+                        </Button>
+                    )}
+                    {canGenerateQr && (
+                        <Button
+                            type="button"
+                            aria-expanded={qrOpen}
+                            onClick={() => setQrOpen(!qrOpen)}
+                            variant="ghost"
+                            className="neu-btn h-11 flex-1"
+                        >
+                            <Printer className="size-4" />
+                            Cetak QR
+                            <ChevronDown
+                                className={cn(
+                                    'size-4 transition-transform duration-200',
+                                    qrOpen && 'rotate-180',
+                                )}
+                            />
+                        </Button>
+                    )}
+                </div>
+
+                {/* ── Bulk QR printing (collapsible on mobile, card on desktop) ── */}
+                {canGenerateQr && (
+                    <section
+                        className={cn(
+                            'neu-card p-4 sm:p-5',
+                            !qrOpen && 'hidden lg:block',
+                        )}
+                    >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                             <div>
-                                <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-                                    <Flame className="size-6 text-primary" />
-                                    Data APAR
-                                </h1>
-                                <p className="mt-1 text-sm text-muted-foreground/70">
-                                    Alat Pemadam Api Ringan &middot; {apar.data.length} unit di halaman ini
+                                <h2 className="text-[15px] font-medium text-foreground">
+                                    Cetak QR Code Massal
+                                </h2>
+                                <p className="mt-0.5 text-sm text-muted-foreground">
+                                    Pilih lantai &amp; batch, lalu cetak label
+                                    QR APAR.
                                 </p>
                             </div>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                            {HasAnyPermission(['apar.create']) && (
-                                <Link href="/fire-safety/apar/upload-excel" className="hidden sm:inline-flex">
-                                    <Button variant="ghost" className="neu-btn">
-                                        <Download className="size-4" />
-                                        Import Excel
-                                    </Button>
-                                </Link>
-                            )}
-                            {HasAnyPermission(['apar.create']) && (
-                                <Link href="/fire-safety/apar/create">
-                                    <Button className="gap-2 btn-soft-primary active:scale-[0.98]">
-                                        <Plus className="size-4" />
-                                        Tambah APAR
-                                    </Button>
-                                </Link>
-                            )}
-                            <Button
-                                onClick={clearFilters}
-                                disabled={!hasActiveFilters}
-                                variant="ghost"
-                                className="neu-btn hover:!border-destructive/50 hover:!bg-destructive/5"
-                            >
-                                <X className="size-4" />
-                                Reset
-                            </Button>
-                        </div>
-                    </div>
-                </section>
-
-                {/* ── Bulk-print toolbar (cetak QR massal) ── */}
-                <section className="glass-panel px-5 py-4 sm:px-6 animate-in fade-in slide-in-from-y-4 duration-400 delay-75">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                        <div>
-                            <h2 className="text-sm font-semibold text-foreground">Cetak QR Code Massal</h2>
-                            <p className="text-xs text-muted-foreground/70">
-                                Pilih lantai &amp; batch, lalu cetak label QR APAR.
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                            <Select value={selectedLantai} onValueChange={setSelectedLantai}>
-                                <SelectTrigger className="w-[180px] neu-card border-border/50 bg-white/50 focus:border-primary/50">
-                                    <SelectValue placeholder="Semua Lantai" />
-                                </SelectTrigger>
-                                <SelectContent className="neu-dropdown">
-                                    <SelectItem value="" className="neu-dropdown-item">Semua Lantai</SelectItem>
-                                    {lantaiList.map((l) => (
-                                        <SelectItem key={l} value={l} className="neu-dropdown-item">{l}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <Select value={selectedBatch} onValueChange={setSelectedBatch}>
-                                <SelectTrigger className="w-[130px] neu-card border-border/50 bg-white/50 focus:border-primary/50">
-                                    <SelectValue placeholder="Batch" />
-                                </SelectTrigger>
-                                <SelectContent className="neu-dropdown">
-                                    {Array.from({ length: batchCount }, (_, i) => (
-                                        <SelectItem key={i} value={`${i + 1}`} className="neu-dropdown-item">Batch {i + 1}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            {HasAnyPermission(['apar.generate-qr']) && (
-                                <Button onClick={handleMassPrint} className="gap-2 btn-soft-primary active:scale-[0.98]">
+                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <Select
+                                    value={selectedLantai || 'all'}
+                                    onValueChange={(v) =>
+                                        setSelectedLantai(v === 'all' ? '' : v)
+                                    }
+                                >
+                                    <SelectTrigger
+                                        aria-label="Lantai untuk cetak massal"
+                                        className="h-11 w-full rounded-[4px] sm:w-[180px]"
+                                    >
+                                        <SelectValue placeholder="Semua Lantai" />
+                                    </SelectTrigger>
+                                    <SelectContent className="neu-dropdown">
+                                        <SelectItem value="all">
+                                            Semua Lantai
+                                        </SelectItem>
+                                        {lantaiList.map((l) => (
+                                            <SelectItem key={l} value={l}>
+                                                {l}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select
+                                    value={selectedBatch}
+                                    onValueChange={setSelectedBatch}
+                                >
+                                    <SelectTrigger
+                                        aria-label="Batch cetak"
+                                        className="h-11 w-full rounded-[4px] sm:w-[130px]"
+                                    >
+                                        <SelectValue placeholder="Batch" />
+                                    </SelectTrigger>
+                                    <SelectContent className="neu-dropdown">
+                                        {Array.from(
+                                            { length: batchCount },
+                                            (_, i) => (
+                                                <SelectItem
+                                                    key={i}
+                                                    value={`${i + 1}`}
+                                                >
+                                                    Batch {i + 1}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                <Button
+                                    onClick={handleMassPrint}
+                                    className="btn-soft-primary h-11 w-full active:scale-[0.98] sm:w-auto"
+                                >
                                     <Printer className="size-4" />
                                     Cetak QR Code
                                 </Button>
-                            )}
-                        </div>
-                    </div>
-                </section>
-
-                {/* ── Stat strip (neumorphic) ── */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {[
-                        { label: 'Total Unit', value: apar.total, icon: Flame },
-                        { label: 'Ditampilkan', value: apar.data.length, icon: Layers },
-                        { label: 'Halaman', value: `${apar.current_page}/${apar.last_page}`, icon: MapPin },
-                    ].map((s) => (
-                        <div key={s.label} className="neu-card flex items-center gap-3 rounded-2xl p-4">
-                            <div className="neu-icon grid h-10 w-10 place-items-center rounded-xl text-white">
-                                <s.icon className="size-5" />
-                            </div>
-                            <div>
-                                <p className="text-xs uppercase tracking-wider text-muted-foreground/70">{s.label}</p>
-                                <p className="text-lg font-bold text-foreground">{s.value}</p>
                             </div>
                         </div>
-                    ))}
-                </div>
-
-                {/* ── Filters (glass, floats above) ── */}
-                <Card className="neu-card animate-in fade-in slide-in-from-y-4 duration-400 delay-100">
-                    <CardHeader className="pb-0">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-base">Filter &amp; Pencarian</CardTitle>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 neu-dropdown-item"
-                                onClick={() => setShowFilters(!showFilters)}
-                                aria-label="Toggle filters"
-                            >
-                                <Filter className="size-4" />
-                            </Button>
-                        </div>
-                    </CardHeader>
-                    <CardContent className={cn('pt-0', showFilters ? '' : 'hidden')}>
-                        <form onSubmit={handleSearch} className="space-y-4 animate-in fade-in slide-in-from-y-2 duration-300">
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-                                <div className="relative sm:col-span-2">
-                                    <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40" />
-                                    <Input
-                                        placeholder="Cari kode, lokasi, lantai..."
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        className="pl-9 neu-card border-border/50 bg-white/50 focus:border-primary/50"
-                                    />
-                                </div>
-                                <div>
-                                    <Select value={jenis} onValueChange={setJenis}>
-                                        <SelectTrigger className="w-full neu-card border-border/50 bg-white/50 focus:border-primary/50">
-                                            <SelectValue placeholder="Jenis" />
-                                        </SelectTrigger>
-                                        <SelectContent className="neu-dropdown">
-                                            <SelectItem value="">Semua Jenis</SelectItem>
-                                            {(filterOptions.jenis.length ? filterOptions.jenis : JENIS).map((j) => (
-                                                <SelectItem key={j} value={j} className="neu-dropdown-item">{j}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Select value={lantai} onValueChange={setLantai}>
-                                        <SelectTrigger className="w-full neu-card border-border/50 bg-white/50 focus:border-primary/50">
-                                            <SelectValue placeholder="Lantai" />
-                                        </SelectTrigger>
-                                        <SelectContent className="neu-dropdown">
-                                            <SelectItem value="">Semua Lantai</SelectItem>
-                                            {LANTAI.map((l) => (
-                                                <SelectItem key={l} value={l} className="neu-dropdown-item">{l}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Select value={size} onValueChange={setSize}>
-                                        <SelectTrigger className="w-full neu-card border-border/50 bg-white/50 focus:border-primary/50">
-                                            <SelectValue placeholder="Ukuran" />
-                                        </SelectTrigger>
-                                        <SelectContent className="neu-dropdown">
-                                            <SelectItem value="">Semua Ukuran</SelectItem>
-                                            {filterOptions.sizes.map((s) => (
-                                                <SelectItem key={s} value={s.toString()} className="neu-dropdown-item">{s} kg</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="flex items-center gap-2 lg:col-span-1">
-                                    <Button
-                                        type="submit"
-                                        className="flex-1 gap-2 btn-soft-primary active:scale-[0.98]"
-                                    >
-                                        <Search className="size-4" />
-                                        Cari
-                                    </Button>
-                                </div>
-                            </div>
-                            {hasActiveFilters && (
-                                <Button type="button" variant="ghost" className="gap-1 text-destructive hover:text-destructive/80" onClick={clearFilters}>
-                                    <X className="size-3.5" />
-                                    Reset semua filter
-                                </Button>
-                            )}
-                        </form>
-                    </CardContent>
-                </Card>
+                    </section>
+                )}
 
                 {/* ── Results info ── */}
-                <div className="flex items-center justify-between text-sm text-muted-foreground animate-in fade-in duration-300">
+                <div
+                    className="flex items-center justify-between text-sm text-muted-foreground"
+                    aria-live="polite"
+                >
                     <p>
                         {apar.from !== null && apar.to !== null ? (
-                            <>Menampilkan <span className="font-semibold text-foreground">{apar.from}</span> -{' '}
-                            <span className="font-semibold text-foreground">{apar.to}</span> dari{' '}
-                            <span className="font-semibold text-foreground">{apar.total}</span> data</>
+                            <>
+                                Menampilkan{' '}
+                                <span className="font-medium text-foreground">
+                                    {apar.from}–{apar.to}
+                                </span>{' '}
+                                dari {apar.total} data
+                            </>
                         ) : (
-                            <>Tidak ada data</>
+                            'Tidak ada data'
                         )}
                     </p>
                     {isPending && (
-                        <span className="flex items-center gap-1.5 text-primary text-sm">
-                            <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
-                                <path d="M12 2a10 10 0 0 1 10 10" strokeLinecap="round" />
+                        <span className="flex items-center gap-1.5 text-primary">
+                            <svg
+                                className="size-4 animate-spin"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                aria-hidden
+                            >
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    strokeOpacity="0.25"
+                                />
+                                <path
+                                    d="M12 2a10 10 0 0 1 10 10"
+                                    strokeLinecap="round"
+                                />
                             </svg>
-                            Memuat...
+                            Memuat…
                         </span>
                     )}
                 </div>
 
-                {/* ── APAR grid (neumorphic widget cards) ── */}
-                {apar.data.length === 0 ? (
-                    <Card className="neu-card animate-in fade-in">
-                        <div className="flex flex-col items-center gap-2 py-16 text-center text-muted-foreground/50">
-                            <svg className="size-14 text-muted-foreground/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                                <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            <p className="text-sm">Tidak ada data APAR</p>
-                            {hasActiveFilters && <p className="text-xs">Coba reset filter atau ubah pencarian</p>}
+                {/* ── Empty state ── */}
+                {apar.data.length === 0 && (
+                    <div className="neu-card flex flex-col items-center gap-3 px-6 py-14 text-center">
+                        <div className="grid size-12 place-items-center rounded-full bg-muted">
+                            <Search
+                                className="size-5 text-muted-foreground"
+                                aria-hidden
+                            />
                         </div>
-                    </Card>
-                ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        {apar.data.map((item, index) => (
-                            <article
-                                key={item.id}
-                                className="neu-card group relative flex flex-col gap-4 rounded-2xl p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-[8px_8px_24px_rgba(195,204,212,0.5),-8px_-8px_24px_rgba(255,255,255,0.85)] animate-in fade-in slide-in-from-y-3 duration-300"
-                                style={{ animationDelay: `${Math.min(index * 35, 350)}ms` }}
+                        <p className="text-[15px] font-medium text-foreground">
+                            Tidak ada data APAR
+                        </p>
+                        <p className="max-w-xs text-sm text-muted-foreground">
+                            {hasActiveFilters
+                                ? 'Tidak ada yang cocok dengan filter saat ini. Coba ubah atau reset pencarian.'
+                                : 'Belum ada APAR terdaftar. Tambahkan unit pertama atau impor dari Excel.'}
+                        </p>
+                        {hasActiveFilters ? (
+                            <Button
+                                variant="ghost"
+                                onClick={clearAll}
+                                className="neu-btn h-10"
                             >
-                                <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60">Kode</p>
-                                        <p className="font-mono text-base font-semibold text-foreground">{item.kode_apar}</p>
-                                    </div>
-                                    <Badge className={cn('rounded-full px-2.5 py-0.5 text-xs font-medium', getJenisColor(item.jenis))}>
-                                        {item.jenis}
-                                    </Badge>
-                                </div>
+                                Reset filter
+                            </Button>
+                        ) : (
+                            canCreate && (
+                                <Button
+                                    asChild
+                                    className="btn-soft-primary h-10 active:scale-[0.98]"
+                                >
+                                    <Link href="/fire-safety/apar/create">
+                                        <Plus className="size-4" />
+                                        Tambah APAR
+                                    </Link>
+                                </Button>
+                            )
+                        )}
+                    </div>
+                )}
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="neu-well p-3">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Ukuran</p>
-                                        <p className="font-mono text-sm font-semibold text-foreground">{item.size} kg</p>
-                                    </div>
-                                    <div className="neu-well p-3">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">Lantai</p>
-                                        <p className="truncate text-sm font-semibold text-foreground">{item.lantai ?? '-'}</p>
-                                    </div>
-                                </div>
-
-                                <div className="neu-well flex items-start gap-2 p-3">
-                                    <MapPin className="mt-0.5 size-4 shrink-0 text-primary/70" />
-                                    <p className="text-sm text-foreground/80">{item.lokasi}</p>
-                                </div>
-
-                                <div className="flex items-center justify-between border-t border-white/50 pt-3">
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <UserRound className="size-4 text-muted-foreground/60" />
-                                        <span className="max-w-[110px] truncate">
-                                            {item.user?.name ?? <span className="text-muted-foreground/40">-</span>}
-                                        </span>
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 neu-dropdown-item">
-                                                <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                                    <circle cx="12" cy="12" r="1" />
-                                                    <circle cx="19" cy="12" r="1" />
-                                                    <circle cx="5" cy="12" r="1" />
-                                                </svg>
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="w-48 neu-dropdown">
-                                            {HasAnyPermission(['apar.edit']) && (
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={`/fire-safety/apar/${item.id}/edit`} className="neu-dropdown-item">
-                                                        <svg className="mr-2 size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5a2.121 2.121 0 0 1 3 3z" />
-                                                        </svg>
-                                                        Edit
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                            )}
-                                            {HasAnyPermission(['apar.generate-qr']) && (
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={`/fire-safety/apar/${item.id}/generate-qr`} target="_blank" className="neu-dropdown-item">
-                                                        <QrCode className="mr-2 size-4" />
-                                                        QR Code
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                            )}
-                                            {HasAnyPermission(['apar.delete']) && (
-                                                <>
-                                                    <DropdownMenuSeparator className="border-border/50 my-1" />
-                                                    <DropdownMenuItem
-                                                        className="neu-dropdown-item text-destructive focus:text-destructive"
-                                                        onClick={() => handleDelete(item.id, item.kode_apar)}
-                                                    >
-                                                        <svg className="mr-2 size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                                            <polyline points="3 6 5 6 21 6" />
-                                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                                        </svg>
-                                                        Hapus
-                                                    </DropdownMenuItem>
-                                                </>
-                                            )}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </article>
+                {/* ── Ledger list (mobile + tablet) ── */}
+                {apar.data.length > 0 && (
+                    <ul className="neu-card list-none divide-y divide-border overflow-hidden lg:hidden">
+                        {apar.data.map((item) => (
+                            <LedgerRow
+                                key={item.id}
+                                item={item}
+                                canEdit={canEdit}
+                                canGenerateQr={canGenerateQr}
+                                canDelete={canDelete}
+                                badge={jenisBadge}
+                                onDelete={setDeleteTarget}
+                            />
                         ))}
+                    </ul>
+                )}
+
+                {/* ── Data table (desktop) ── */}
+                {apar.data.length > 0 && (
+                    <div className="neu-card hidden overflow-hidden lg:block">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/60 hover:bg-muted/60">
+                                    <TableHead className="pl-4">Kode</TableHead>
+                                    <TableHead>Jenis</TableHead>
+                                    <TableHead>Ukuran</TableHead>
+                                    <TableHead>Lantai</TableHead>
+                                    <TableHead>Lokasi</TableHead>
+                                    <TableHead>Petugas</TableHead>
+                                    <TableHead className="pr-4 text-right">
+                                        Aksi
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {apar.data.map((item) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="pl-4 font-mono font-medium text-foreground">
+                                            {item.kode_apar}
+                                        </TableCell>
+                                        <TableCell>
+                                            {jenisBadge(item.jenis)}
+                                        </TableCell>
+                                        <TableCell>{Number(item.size)} kg</TableCell>
+                                        <TableCell>
+                                            {item.lantai ?? '—'}
+                                        </TableCell>
+                                        <TableCell
+                                            className="max-w-[240px] truncate"
+                                            title={item.lokasi}
+                                        >
+                                            {item.lokasi}
+                                        </TableCell>
+                                        <TableCell className="text-muted-foreground">
+                                            {item.user?.name ?? '—'}
+                                        </TableCell>
+                                        <TableCell className="pr-4">
+                                            <div className="flex items-center justify-end gap-1">
+                                                {canEdit && (
+                                                    <Button
+                                                        asChild
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-10 rounded-[4px] text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        <Link
+                                                            href={`/fire-safety/apar/${item.id}/edit`}
+                                                            aria-label={`Edit ${item.kode_apar}`}
+                                                        >
+                                                            <Pencil className="size-4" />
+                                                        </Link>
+                                                    </Button>
+                                                )}
+                                                {canGenerateQr && (
+                                                    <Button
+                                                        asChild
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-10 rounded-[4px] text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        <a
+                                                            href={`/fire-safety/apar/${item.id}/generate-qr`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            aria-label={`Cetak QR ${item.kode_apar}`}
+                                                        >
+                                                            <QrCode className="size-4" />
+                                                        </a>
+                                                    </Button>
+                                                )}
+                                                {canDelete && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="size-10 rounded-[4px] text-muted-foreground hover:text-destructive"
+                                                        aria-label={`Hapus ${item.kode_apar}`}
+                                                        onClick={() =>
+                                                            setDeleteTarget(
+                                                                item,
+                                                            )
+                                                        }
+                                                    >
+                                                        <Trash2 className="size-4" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
                     </div>
                 )}
 
                 {/* ── Pagination ── */}
                 {apar.last_page > 1 && (
-                    <Card className="neu-card animate-in fade-in">
-                        <div className="p-4">
-                            <nav className="flex items-center justify-center gap-1" aria-label="Pagination">
-                                {apar.current_page > 1 && (
-                                    <a
-                                        href={apar.links.find((l) => l.label === 'Previous')?.url ?? '#'}
-                                        className="insp-pagination-btn neu-card border-border/50 hover:border-primary/50 hover:bg-primary/5"
-                                        aria-label="Previous page"
-                                    >
-                                        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                            <path d="M15 18l-6-6 6-6" />
-                                        </svg>
-                                    </a>
-                                )}
-                                {apar.links.map((link) =>
-                                    link.url ? (
-                                        <a
-                                            key={link.url}
-                                            href={link.url}
-                                            className={cn(
-                                                'insp-pagination-btn neu-card border-border/50 hover:border-primary/50 hover:bg-primary/5',
-                                                link.active && 'insp-pagination-btn-active bg-primary text-primary-foreground border-primary',
-                                            )}
-                                        >
-                                            {link.label}
-                                        </a>
-                                    ) : (
-                                        <span key={link.label} className="insp-pagination-btn neu-card opacity-50 cursor-not-allowed border-border/50">
-                                            {link.label}
-                                        </span>
-                                    ),
-                                )}
-                                {apar.current_page < apar.last_page && (
-                                    <a
-                                        href={apar.links.find((l) => l.label === 'Next')?.url ?? '#'}
-                                        className="insp-pagination-btn neu-card border-border/50 hover:border-primary/50 hover:bg-primary/5"
-                                        aria-label="Next page"
-                                    >
-                                        <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                                            <path d="M9 18l6-6-6-6" />
-                                        </svg>
-                                    </a>
-                                )}
-                            </nav>
-                        </div>
-                    </Card>
+                    <nav
+                        aria-label="Navigasi halaman"
+                        className="flex items-center justify-between"
+                    >
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={!prevUrl}
+                            className="size-11 rounded-[4px]"
+                            onClick={() => prevUrl && router.get(prevUrl)}
+                            aria-label="Halaman sebelumnya"
+                        >
+                            <ChevronLeft className="size-4" />
+                        </Button>
+                        <p className="text-sm text-muted-foreground">
+                            Halaman{' '}
+                            <span className="font-medium text-foreground">
+                                {apar.current_page}
+                            </span>{' '}
+                            dari {apar.last_page}
+                        </p>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={!nextUrl}
+                            className="size-11 rounded-[4px]"
+                            onClick={() => nextUrl && router.get(nextUrl)}
+                            aria-label="Halaman berikutnya"
+                        >
+                            <ChevronRight className="size-4" />
+                        </Button>
+                    </nav>
                 )}
             </div>
+
+            {/* ── Mobile filter sheet ── */}
+            <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+                <SheetContent
+                    side="bottom"
+                    className="max-h-[85dvh] gap-0 rounded-t-lg px-0 pb-2"
+                >
+                    <SheetHeader className="px-4 pb-2">
+                        <SheetTitle>Filter</SheetTitle>
+                        <SheetDescription>
+                            Filter diterapkan langsung saat dipilih.
+                        </SheetDescription>
+                    </SheetHeader>
+                    <div className="space-y-4 overflow-y-auto px-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="filter-jenis">Jenis</Label>
+                            <Select
+                                value={jenis || 'all'}
+                                onValueChange={(v) =>
+                                    setFilter('jenis', v === 'all' ? '' : v)
+                                }
+                            >
+                                <SelectTrigger
+                                    id="filter-jenis"
+                                    className="h-11 w-full rounded-[4px]"
+                                >
+                                    <SelectValue placeholder="Semua Jenis" />
+                                </SelectTrigger>
+                                <SelectContent className="neu-dropdown">
+                                    <SelectItem value="all">
+                                        Semua Jenis
+                                    </SelectItem>
+                                    {(filterOptions.jenis.length
+                                        ? filterOptions.jenis
+                                        : JENIS
+                                    ).map((j) => (
+                                        <SelectItem key={j} value={j}>
+                                            {j}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="filter-lantai">Lantai</Label>
+                            <Select
+                                value={lantai || 'all'}
+                                onValueChange={(v) =>
+                                    setFilter('lantai', v === 'all' ? '' : v)
+                                }
+                            >
+                                <SelectTrigger
+                                    id="filter-lantai"
+                                    className="h-11 w-full rounded-[4px]"
+                                >
+                                    <SelectValue placeholder="Semua Lantai" />
+                                </SelectTrigger>
+                                <SelectContent className="neu-dropdown">
+                                    <SelectItem value="all">
+                                        Semua Lantai
+                                    </SelectItem>
+                                    {LANTAI.map((l) => (
+                                        <SelectItem key={l} value={l}>
+                                            {l}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="filter-size">Ukuran</Label>
+                            <Select
+                                value={size || 'all'}
+                                onValueChange={(v) =>
+                                    setFilter('size', v === 'all' ? '' : v)
+                                }
+                            >
+                                <SelectTrigger
+                                    id="filter-size"
+                                    className="h-11 w-full rounded-[4px]"
+                                >
+                                    <SelectValue placeholder="Semua Ukuran" />
+                                </SelectTrigger>
+                                <SelectContent className="neu-dropdown">
+                                    <SelectItem value="all">
+                                        Semua Ukuran
+                                    </SelectItem>
+                                    {filterOptions.sizes.map((s) => (
+                                        <SelectItem
+                                            key={s}
+                                            value={s.toString()}
+                                        >
+                                            {s} kg
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <SheetFooter className="flex-row gap-2 px-4 pb-4">
+                        <Button
+                            variant="ghost"
+                            onClick={clearAll}
+                            disabled={!hasActiveFilters}
+                            className="neu-btn h-11 flex-1"
+                        >
+                            Reset
+                        </Button>
+                        <Button
+                            onClick={() => setFilterSheetOpen(false)}
+                            className="btn-soft-primary h-11 flex-1 active:scale-[0.98]"
+                        >
+                            Selesai
+                        </Button>
+                    </SheetFooter>
+                </SheetContent>
+            </Sheet>
+
+            {/* ── Delete confirmation ── */}
+            <ConfirmDialog
+                open={deleteTarget !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleteTarget(null);
+                    }
+                }}
+                title={`Hapus APAR ${deleteTarget?.kode_apar ?? ''}?`}
+                desc="Data APAR ini akan dihapus permanen dan tidak dapat dikembalikan."
+                destructive
+                confirmText="Hapus"
+                cancelBtnText="Batal"
+                handleConfirm={confirmDelete}
+            />
         </>
     );
 }

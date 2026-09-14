@@ -9,9 +9,8 @@
 
 @theme {
     --font-sans:
-        'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
-        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-        'Noto Color Emoji';
+        sohne-var, 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+        Roboto, 'Helvetica Neue', Arial, sans-serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
@@ -36,6 +35,7 @@
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
+    --color-link: var(--link);
     --color-chart-1: var(--chart-1);
     --color-chart-2: var(--chart-2);
     --color-chart-3: var(--chart-3);
@@ -52,44 +52,60 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — climate dial
-   Neumorphism + Glassmorphism hybrid
+   STRIPE DESIGN SYSTEM — light theme tokens
+   Source of truth: Design.md (Stripe-inspired system)
+   Brand Purple #533AFD · Deep Navy #0A2540 · Border Gray #E5EDF5
    ═══════════════════════════════════════════════════════════ */
 
 :root {
-    --background: #e8eef2;
-    --foreground: #4a5a66;
+    --background: #ffffff;
+    --foreground: #0a2540;
     --card: #ffffff;
-    --card-foreground: #4a5a66;
+    --card-foreground: #425466;
     --popover: #ffffff;
-    --popover-foreground: #4a5a66;
-    --primary: #4db8e8;
+    --popover-foreground: #425466;
+    --primary: #533afd;
     --primary-foreground: #ffffff;
-    --secondary: #c3ccd4;
-    --secondary-foreground: #4a5a66;
-    --muted: #e2e8ee;
-    --muted-foreground: #7a8a96;
-    --accent: #4db8e8;
-    --accent-foreground: #ffffff;
-    --destructive: #e74c3c;
+    --secondary: rgba(83, 58, 253, 0.1);
+    --secondary-foreground: #533afd;
+    --muted: #f6f9fc;
+    --muted-foreground: #64748d;
+    --accent: rgba(83, 58, 253, 0.1);
+    --accent-foreground: #533afd;
+    --destructive: #d1435b;
     --destructive-foreground: #ffffff;
-    --border: rgba(255, 255, 255, 0.6);
-    --input: #dde4ea;
-    --ring: #4db8e8;
-    --chart-1: #4db8e8;
-    --chart-2: #c3ccd4;
-    --chart-3: #4a5a66;
-    --chart-4: #7ec8e3;
-    --chart-5: #a8d4e6;
-    --radius: 0.75rem;
-    --sidebar: transparent;
-    --sidebar-foreground: #4a5a66;
-    --sidebar-primary: #4db8e8;
+    --border: #e5edf5;
+    --input: #e5edf5;
+    --ring: rgba(83, 58, 253, 0.3);
+    --link: #533afd;
+    --chart-1: #533afd;
+    --chart-2: #0073e6;
+    --chart-3: #15be53;
+    --chart-4: #0a2540;
+    --chart-5: #64748d;
+    --radius: 8px;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #425466;
+    --sidebar-primary: #533afd;
     --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #4db8e8;
-    --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: transparent;
-    --sidebar-ring: #4db8e8;
+    --sidebar-accent: rgba(83, 58, 253, 0.1);
+    --sidebar-accent-foreground: #533afd;
+    --sidebar-border: #e5edf5;
+    --sidebar-ring: rgba(83, 58, 253, 0.3);
+
+    /* Elevation — dual-layer Stripe shadows (color layer + contrast layer) */
+    --shadow-sm-stripe:
+        rgba(50, 50, 93, 0.25) 0px 50px 100px -20px,
+        rgba(0, 0, 0, 0.3) 0px 30px 60px -30px;
+    --shadow-md-stripe:
+        rgba(0, 0, 0, 0.1) 0px 18px 36px -18px,
+        rgba(50, 50, 93, 0.25) 0px 30px 45px -30px;
+    --shadow-lg-stripe:
+        rgba(50, 50, 93, 0.25) 0px 13px 27px -5px,
+        rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+    --shadow-xl-stripe:
+        rgba(50, 50, 93, 0.25) 0px 30px 60px -12px,
+        rgba(0, 0, 0, 0.3) 0px 18px 36px -18px;
 }
 
 @layer base {
@@ -98,54 +114,77 @@
     }
     body {
         @apply bg-background text-foreground;
-        font-family:
-            system-ui,
-            -apple-system,
-            sans-serif;
+        font-family: var(--font-sans);
+        font-weight: 300;
+        font-size: 14px;
+        line-height: 1.4;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ─── Browser surfaces, themed from the palette ─── */
+    ::selection {
+        background: rgba(83, 58, 253, 0.2);
+        color: #0a2540;
+    }
+
+    ::placeholder {
+        color: #64748d;
+        opacity: 1;
+    }
+
+    *:focus-visible {
+        outline: 2px solid #533afd;
+        outline-offset: 2px;
+    }
+
+    html {
+        scrollbar-color: #cfd9e3 transparent;
+        scrollbar-width: thin;
     }
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Background
+   STRIPE — App Background
+   White ground with an ultra-subtle diagonal brand wash
    ═══════════════════════════════════════════════════════════ */
 .app-bg {
     background:
         radial-gradient(
-            ellipse 80% 50% at 0% 0%,
-            rgba(77, 184, 232, 0.06) 0%,
-            transparent 50%
+            ellipse 90% 40% at 100% 0%,
+            rgba(83, 58, 253, 0.04) 0%,
+            transparent 55%
         ),
         radial-gradient(
-            ellipse 60% 60% at 100% 100%,
-            rgba(195, 204, 212, 0.08) 0%,
-            transparent 50%
+            ellipse 70% 50% at 0% 100%,
+            rgba(0, 115, 230, 0.03) 0%,
+            transparent 55%
         ),
-        #e8eef2;
+        #ffffff;
     min-height: 100dvh;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Glass: Top Navigation Bar
+   STRIPE — Header Navigation
+   64px, white 0.95, 1px #E5EDF5 bottom border
    ═══════════════════════════════════════════════════════════ */
 .glass-nav {
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow:
-        0 1px 3px rgba(195, 204, 212, 0.3),
-        0 4px 12px rgba(195, 204, 212, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid #e5edf5;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   AER — Neumorphic: Nav Items
-   ═══════════════════════════════════════════════════════════ */
+/* ─── Nav item: 14px/400 #425466, 8px 16px, radius 4px ─── */
 .neu-nav-item {
-    padding: 6px 14px;
-    border-radius: 8px;
-    color: #4a5a66;
-    transition: all 200ms ease;
+    padding: 8px 16px;
+    border-radius: 4px;
+    color: #425466;
+    font-size: 14px;
+    font-weight: 400;
+    transition:
+        color 150ms ease-out,
+        background-color 150ms ease-out;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -154,112 +193,103 @@
 }
 
 .neu-nav-item:hover {
-    background: rgba(77, 184, 232, 0.08);
-    color: #4db8e8;
-    box-shadow:
-        2px 2px 5px rgba(195, 204, 212, 0.4),
-        -2px -2px 5px rgba(255, 255, 255, 0.8);
+    background: rgba(83, 58, 253, 0.1);
+    color: #533afd;
 }
 
-/* ─── Active nav item (pressed) ─── */
+/* ─── Active nav item ─── */
 .neu-nav-active {
-    background: rgba(77, 184, 232, 0.12) !important;
-    color: #4db8e8 !important;
-    box-shadow:
-        inset 2px 2px 5px rgba(195, 204, 212, 0.4),
-        inset -2px -2px 5px rgba(255, 255, 255, 0.8),
-        inset 0 0 0 1px rgba(77, 184, 232, 0.15) !important;
-    font-weight: 600;
+    background: rgba(83, 58, 253, 0.1) !important;
+    color: #533afd !important;
+    font-weight: 500;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Neumorphic: Dropdown
+   STRIPE — Dropdown
+   White panel, 1px #E5EDF5, radius 8px, md elevation, z-99
    ═══════════════════════════════════════════════════════════ */
 .neu-dropdown {
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 12px;
-    box-shadow:
-        4px 4px 12px rgba(195, 204, 212, 0.4),
-        -4px -4px 12px rgba(255, 255, 255, 0.8),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    background: #ffffff;
+    border: 1px solid #e5edf5;
+    border-radius: 8px;
+    box-shadow: var(--shadow-md-stripe);
 }
 
-/* ─── Dropdown item ─── */
+/* ─── Dropdown item: 40px touch target ─── */
 .neu-dropdown-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 14px;
+    padding: 10px 14px;
     margin: 2px 8px;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: #4a5a66;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #425466;
     text-decoration: none;
-    transition: all 180ms ease;
+    transition:
+        color 150ms ease-out,
+        background-color 150ms ease-out;
 }
 
 .neu-dropdown-item:hover {
-    background: rgba(77, 184, 232, 0.1);
-    color: #4db8e8;
+    background: rgba(83, 58, 253, 0.1);
+    color: #533afd;
 }
 
 /* ─── Dropdown active item ─── */
 .neu-dropdown-active {
-    background: rgba(77, 184, 232, 0.12) !important;
-    color: #4db8e8 !important;
-    font-weight: 600;
+    background: rgba(83, 58, 253, 0.1) !important;
+    color: #533afd !important;
+    font-weight: 500;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Neumorphic: Logo Icon
+   STRIPE — Brand Icon Tile
+   Blue→purple diagonal gradient (design.md gradient accents)
    ═══════════════════════════════════════════════════════════ */
 .neu-icon {
-    background: linear-gradient(135deg, #4db8e8, #3aa8d8);
+    background: linear-gradient(135deg, #0073e6, #533afd);
     border-radius: 8px;
-    box-shadow:
-        3px 3px 6px rgba(195, 204, 212, 0.5),
-        -3px -3px 6px rgba(255, 255, 255, 0.8),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    color: #ffffff;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Neumorphic: User Button
+   STRIPE — User Button (icon button spec)
    ═══════════════════════════════════════════════════════════ */
 .neu-user-btn {
-    border-radius: 8px;
-    transition: all 200ms ease;
+    border-radius: 4px;
+    transition:
+        color 150ms ease-out,
+        background-color 150ms ease-out;
     background: transparent;
     border: none;
     cursor: pointer;
 }
 
 .neu-user-btn:hover {
-    background: rgba(77, 184, 232, 0.06);
-    box-shadow:
-        2px 2px 5px rgba(195, 204, 212, 0.4),
-        -2px -2px 5px rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.neu-user-btn:active {
+    background: rgba(0, 0, 0, 0.1);
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Mobile Header
+   STRIPE — Mobile Header
+   White, #E5EDF5 border, 56px, z-100 sticky
    ═══════════════════════════════════════════════════════════ */
 .mobile-header {
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: 100;
     display: flex;
     align-items: center;
     justify-content: space-between;
     height: 56px;
     padding: 0 16px;
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+    background: #ffffff;
+    border-bottom: 1px solid #e5edf5;
 }
 
 @media (min-width: 1024px) {
@@ -269,25 +299,22 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Mobile Bottom Tab Bar
+   STRIPE — Mobile Bottom Tab Bar
+   White, #E5EDF5 top border, md-elevation shadow, ≥40px tabs
    ═══════════════════════════════════════════════════════════ */
 .mobile-tab-bar {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 50;
+    z-index: 100;
     display: flex;
     align-items: stretch;
-    height: 64px;
+    height: 56px;
     padding-bottom: env(safe-area-inset-bottom, 0);
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border-top: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow:
-        0 -2px 8px rgba(195, 204, 212, 0.3),
-        0 -8px 24px rgba(195, 204, 212, 0.15);
+    background: #ffffff;
+    border-top: 1px solid #e5edf5;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px -18px 36px -18px;
 }
 
 @media (min-width: 1024px) {
@@ -296,7 +323,7 @@
     }
 }
 
-/* ─── Tab Item ─── */
+/* ─── Tab item: 40px+ target, #64748D inactive ─── */
 .mobile-tab {
     flex: 1;
     display: flex;
@@ -304,20 +331,23 @@
     align-items: center;
     justify-content: center;
     gap: 2px;
+    min-height: 44px;
     text-decoration: none;
-    color: #7a8a96;
-    transition: color 180ms ease;
+    color: #64748d;
+    transition: color 150ms ease-out;
     -webkit-tap-highlight-color: transparent;
     padding-top: 6px;
+    position: relative;
 }
 
 .mobile-tab:active {
     opacity: 0.7;
 }
 
-/* ─── Active tab ─── */
+/* ─── Active tab: purple + 2px indicator ─── */
 .mobile-tab-active {
-    color: #4db8e8 !important;
+    color: #533afd !important;
+    font-weight: 500;
 }
 
 .mobile-tab-active::before {
@@ -329,25 +359,26 @@
     width: 24px;
     height: 2px;
     border-radius: 0 0 2px 2px;
-    background: #4db8e8;
+    background: #533afd;
 }
 
 /* ─── Tab label ─── */
 .mobile-tab-label {
-    font-size: 0.625rem;
-    font-weight: 500;
+    font-size: 12px;
+    font-weight: 400;
     letter-spacing: 0.01em;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Mobile Drawer (sidebar from left)
+   STRIPE — Mobile Drawer
+   White panel, 1px #E5EDF5, mobile-nav shadow, z-999
    ═══════════════════════════════════════════════════════════ */
 .mobile-drawer-overlay {
     position: fixed;
     inset: 0;
-    z-index: 100;
-    background: rgba(74, 90, 102, 0.3);
-    animation: fadeIn 200ms ease;
+    z-index: 999;
+    background: rgba(10, 37, 64, 0.5);
+    animation: fadeIn 200ms ease-out;
 }
 
 .mobile-drawer {
@@ -356,11 +387,10 @@
     left: 0;
     bottom: 0;
     width: 280px;
-    z-index: 101;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
-    border-right: 1px solid rgba(255, 255, 255, 0.6);
+    z-index: 999;
+    background: #ffffff;
+    border-right: 1px solid #e5edf5;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 18px 36px -18px;
     display: flex;
     flex-direction: column;
     animation: slideRight 280ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -368,175 +398,165 @@
 
 /* ─── Drawer section card ─── */
 .mobile-drawer-section {
-    background: rgba(255, 255, 255, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 12px;
+    background: #f6f9fc;
+    border: 1px solid #e5edf5;
+    border-radius: 6px;
     padding: 4px;
 }
 
-/* ─── Drawer item ─── */
+/* ─── Drawer item: ≥40px target ─── */
 .mobile-drawer-item {
     display: flex;
     align-items: center;
     padding: 11px 12px;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: #4a5a66;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 400;
+    color: #425466;
     text-decoration: none;
-    transition: all 180ms ease;
+    transition:
+        color 150ms ease-out,
+        background-color 150ms ease-out;
 }
 
 .mobile-drawer-item:active {
-    opacity: 0.6;
+    background: rgba(83, 58, 253, 0.2);
+    color: #533afd;
 }
 
 .mobile-drawer-item-active {
-    background: rgba(77, 184, 232, 0.12);
-    color: #4db8e8 !important;
-    font-weight: 600;
+    background: rgba(83, 58, 253, 0.1);
+    color: #533afd !important;
+    font-weight: 500;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Neumorphic: Content Card
+   STRIPE — Default Card
+   White, 1px #E5EDF5, radius 8px, lg dual-layer elevation
    ═══════════════════════════════════════════════════════════ */
 .neu-card {
     background: #ffffff;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow:
-        4px 4px 12px rgba(195, 204, 212, 0.4),
-        -4px -4px 12px rgba(255, 255, 255, 0.8),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    border-radius: 8px;
+    border: 1px solid #e5edf5;
+    color: #425466;
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 19.6px;
+    box-shadow: var(--shadow-lg-stripe);
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Glass Panel (elevated/floating surface)
+   STRIPE — Section Panel
+   Light blue-gray surface, subtle border, no heavy glass
    ═══════════════════════════════════════════════════════════ */
 .glass-panel {
-    background: rgba(255, 255, 255, 0.45);
-    backdrop-filter: blur(16px) saturate(140%);
-    -webkit-backdrop-filter: blur(16px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow:
-        8px 8px 24px rgba(195, 204, 212, 0.35),
-        -8px -8px 24px rgba(255, 255, 255, 0.7),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #e5edf5;
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg-stripe);
 }
 
-/* ─── AER: Neumorphic secondary button ─── */
+/* ═══════════════════════════════════════════════════════════
+   STRIPE — Secondary Button
+   Transparent, #533AFD text + 1px border, 40px, radius 4px
+   ═══════════════════════════════════════════════════════════ */
 .neu-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     height: 40px;
-    padding: 0 16px;
-    border-radius: 16px;
-    color: #4a5a66;
-    background: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow:
-        4px 4px 12px rgba(195, 204, 212, 0.4),
-        -4px -4px 12px rgba(255, 255, 255, 0.8),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    transition: all 200ms ease;
+    padding: 0 24px;
+    border-radius: 4px;
+    color: #533afd;
+    background: transparent;
+    border: 1px solid #533afd;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 14px;
+    transition:
+        color 150ms ease-out,
+        background-color 150ms ease-out,
+        border-color 150ms ease-out;
     cursor: pointer;
-    font-weight: 500;
 }
 
 .neu-btn:hover:not(:disabled) {
-    border-color: rgba(77, 184, 232, 0.5);
-    background: rgba(77, 184, 232, 0.05);
-    box-shadow:
-        6px 6px 16px rgba(195, 204, 212, 0.45),
-        -6px -6px 16px rgba(255, 255, 255, 0.85),
-        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    background: rgba(83, 58, 253, 0.1);
+    border-color: #533afd;
+    color: #533afd;
 }
 
 .neu-btn:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow:
-        inset 3px 3px 8px rgba(195, 204, 212, 0.4),
-        inset -3px -3px 8px rgba(255, 255, 255, 0.8);
+    background: rgba(83, 58, 253, 0.2);
 }
 
 .neu-btn:disabled,
 .neu-btn[disabled] {
-    opacity: 0.5;
+    border-color: #cccccc;
+    color: #cccccc;
     cursor: not-allowed;
+    background: transparent;
 }
 
-/* ─── AER: Neumorphic well (inset field on cards) ─── */
+/* ─── Inset well (form context strip) ─── */
 .neu-well {
-    background: #e8eef2;
-    border-radius: 12px;
-    box-shadow:
-        inset 3px 3px 6px rgba(195, 204, 212, 0.5),
-        inset -3px -3px 6px rgba(255, 255, 255, 0.9),
-        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    background: #f6f9fc;
+    border: 1px solid #e5edf5;
+    border-radius: 6px;
 }
 
-/* ─── AER: Neumorphic dial (header gauge) ─── */
+/* ─── Circular dial container (stat medallions) ─── */
 .neu-dial {
     background: #ffffff;
+    border: 1px solid #e5edf5;
     border-radius: 9999px;
-    box-shadow:
-        4px 4px 10px rgba(195, 204, 212, 0.5),
-        -4px -4px 10px rgba(255, 255, 255, 0.9),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    box-shadow: var(--shadow-lg-stripe);
 }
 
-/* ─── Stage: busy gradient so glass has something to refract ─── */
+/* ─── Gradient stage behind hero illustrations ─── */
 .preview-stage {
     background:
         radial-gradient(
             120% 120% at 100% 0%,
-            rgba(77, 184, 232, 0.12),
+            rgba(83, 58, 253, 0.08),
             transparent 60%
         ),
         linear-gradient(
             135deg,
-            rgba(195, 204, 212, 0.3),
-            rgba(232, 238, 242, 0.5)
+            rgba(0, 115, 230, 0.06),
+            rgba(83, 58, 253, 0.04)
         );
-    border-radius: 16px;
+    border-radius: 8px;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Inspection Menu Card
+   STRIPE — Inspection Menu Card
+   Default card + lift-on-hover, 44px icon tiles
    ═══════════════════════════════════════════════════════════ */
 .insp-menu-card {
     display: flex;
     align-items: center;
     gap: 14px;
     padding: 16px;
-    border-radius: 16px;
+    border-radius: 8px;
     background: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid #e5edf5;
     text-decoration: none;
-    transition: all 200ms ease;
-    box-shadow:
-        4px 4px 12px rgba(195, 204, 212, 0.35),
-        -4px -4px 12px rgba(255, 255, 255, 0.7),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    transition:
+        box-shadow 150ms ease-out,
+        transform 150ms ease-out;
+    box-shadow: var(--shadow-lg-stripe);
 }
 
 .insp-menu-card:hover {
-    box-shadow:
-        6px 6px 16px rgba(195, 204, 212, 0.45),
-        -6px -6px 16px rgba(255, 255, 255, 0.85),
-        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    box-shadow: var(--shadow-xl-stripe);
     transform: translateY(-2px);
 }
 
 .insp-menu-card:active {
     transform: translateY(0);
-    box-shadow:
-        inset 3px 3px 8px rgba(195, 204, 212, 0.4),
-        inset -3px -3px 8px rgba(255, 255, 255, 0.8),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    box-shadow: var(--shadow-lg-stripe);
 }
 
 .insp-menu-icon {
@@ -545,92 +565,81 @@
     justify-content: center;
     width: 44px;
     height: 44px;
-    border-radius: 12px;
+    border-radius: 8px;
     flex-shrink: 0;
 }
 
-/* ─── Pagination ─── */
+/* ─── Pagination button: ≥36px, ≥40px on touch ─── */
 .insp-pagination-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     width: 36px;
     height: 36px;
-    border-radius: 8px;
-    color: #4a5a66;
+    border-radius: 4px;
+    color: #425466;
     background: transparent;
     border: 1px solid transparent;
-    transition: all 180ms ease;
+    transition:
+        color 150ms ease-out,
+        background-color 150ms ease-out,
+        border-color 150ms ease-out;
     cursor: pointer;
 }
 
 .insp-pagination-btn:hover:not(:disabled) {
-    background: rgba(77, 184, 232, 0.1);
-    color: #4db8e8;
-    border-color: rgba(77, 184, 232, 0.2);
-    box-shadow:
-        2px 2px 5px rgba(195, 204, 212, 0.4),
-        -2px -2px 5px rgba(255, 255, 255, 0.8);
+    background: rgba(83, 58, 253, 0.1);
+    color: #533afd;
+    border-color: rgba(83, 58, 253, 0.2);
 }
 
 .insp-pagination-btn:disabled,
 .insp-pagination-btn[disabled] {
-    opacity: 0.4;
+    opacity: 0.5;
     cursor: not-allowed;
 }
 
 .insp-pagination-btn-active {
-    background: rgba(77, 184, 232, 0.15) !important;
-    color: #4db8e8 !important;
-    border-color: rgba(77, 184, 232, 0.25) !important;
-    box-shadow:
-        inset 2px 2px 5px rgba(195, 204, 212, 0.4),
-        inset -2px -2px 5px rgba(255, 255, 255, 0.8);
-    font-weight: 600;
+    background: rgba(83, 58, 253, 0.1) !important;
+    color: #533afd !important;
+    border-color: rgba(83, 58, 253, 0.2) !important;
+    font-weight: 500;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   AER — Soft Primary Button
+   STRIPE — Primary Button
+   #533AFD, white 14px/400, radius 4px, 40px
+   Hover #4328D9 + lg shadow · Active #3620B0
+   Disabled #CCCCCC/#666 + opacity 0.5
    ═══════════════════════════════════════════════════════════ */
 .btn-soft-primary {
-    background: linear-gradient(135deg, #4db8e8, #3aa8d8);
+    background: #533afd;
     color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    border-radius: 16px;
-    font-weight: 600;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 400;
     transition:
-        color 200ms ease,
-        box-shadow 200ms ease,
-        transform 200ms ease,
-        background-color 200ms ease;
-    box-shadow:
-        5px 5px 14px rgba(195, 204, 212, 0.45),
-        -5px -5px 14px rgba(255, 255, 255, 0.85),
-        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        background-color 150ms ease-out,
+        box-shadow 150ms ease-out;
+    box-shadow: var(--shadow-lg-stripe);
 }
 
 .btn-soft-primary:hover:not(:disabled) {
-    background: linear-gradient(135deg, #43b0e2, #349fd0);
-    transform: translateY(-1px);
-    box-shadow:
-        6px 6px 16px rgba(195, 204, 212, 0.5),
-        -6px -6px 16px rgba(255, 255, 255, 0.7),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: #4328d9;
+    box-shadow: var(--shadow-xl-stripe);
 }
 
 .btn-soft-primary:active:not(:disabled) {
-    transform: translateY(0);
-    box-shadow:
-        inset 3px 3px 8px rgba(195, 204, 212, 0.5),
-        inset -3px -3px 8px rgba(255, 255, 255, 0.7),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: #3620b0;
 }
 
 .btn-soft-primary:disabled,
 .btn-soft-primary[disabled] {
+    background: #cccccc;
+    color: #666666;
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
     box-shadow: none;
 }
 
@@ -668,4 +677,280 @@
 
 .float-in {
     animation: floatIn 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* One authored motion grammar: 150–200ms ease-out everywhere.
+   Honor the OS reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STRIPE — Dark variant
+   Surfaces derived from Deep Navy #0A2540; fill purple and
+   white-on-purple interactions are unchanged; link/active text
+   brightens to #9182FF for AA contrast on navy.
+   ═══════════════════════════════════════════════════════════ */
+
+.dark {
+    --background: #0b111e;
+    --foreground: #f6f9fc;
+    --card: #111a2b;
+    --card-foreground: #c6d3e2;
+    --popover: #111a2b;
+    --popover-foreground: #c6d3e2;
+    --primary: #533afd;
+    --primary-foreground: #ffffff;
+    --secondary: rgba(145, 130, 255, 0.15);
+    --secondary-foreground: #9182ff;
+    --muted: #1a2333;
+    --muted-foreground: #8fa3bf;
+    --accent: rgba(145, 130, 255, 0.15);
+    --accent-foreground: #9182ff;
+    --destructive: #ff7a92;
+    --destructive-foreground: #0b111e;
+    --border: #223049;
+    --input: #223049;
+    --ring: rgba(145, 130, 255, 0.4);
+    --link: #9182ff;
+    --sidebar: #111a2b;
+    --sidebar-foreground: #c6d3e2;
+    --sidebar-primary: #533afd;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: rgba(145, 130, 255, 0.15);
+    --sidebar-accent-foreground: #9182ff;
+    --sidebar-border: #223049;
+    --sidebar-ring: rgba(145, 130, 255, 0.4);
+}
+
+.dark ::selection {
+    background: rgba(145, 130, 255, 0.3);
+    color: #f6f9fc;
+}
+
+.dark .app-bg {
+    background:
+        radial-gradient(
+            ellipse 90% 40% at 100% 0%,
+            rgba(83, 58, 253, 0.12) 0%,
+            transparent 55%
+        ),
+        radial-gradient(
+            ellipse 70% 50% at 0% 100%,
+            rgba(0, 115, 230, 0.08) 0%,
+            transparent 55%
+        ),
+        #0b111e;
+}
+
+.dark .glass-nav {
+    background: rgba(17, 26, 43, 0.95);
+    border-bottom-color: #223049;
+}
+
+.dark .neu-nav-item {
+    color: #c6d3e2;
+}
+
+.dark .neu-nav-item:hover {
+    background: rgba(145, 130, 255, 0.15);
+    color: #9182ff;
+}
+
+.dark .neu-nav-active {
+    background: rgba(145, 130, 255, 0.15) !important;
+    color: #9182ff !important;
+}
+
+.dark .neu-dropdown {
+    background: #111a2b;
+    border-color: #223049;
+}
+
+.dark .neu-dropdown-item {
+    color: #c6d3e2;
+}
+
+.dark .neu-dropdown-item:hover {
+    background: rgba(145, 130, 255, 0.15);
+    color: #9182ff;
+}
+
+.dark .neu-dropdown-active {
+    background: rgba(145, 130, 255, 0.15) !important;
+    color: #9182ff !important;
+}
+
+.dark .neu-icon {
+    background: linear-gradient(135deg, #0073e6, #533afd);
+    color: #ffffff;
+}
+
+.dark .neu-user-btn:hover {
+    background: rgba(246, 249, 252, 0.06);
+}
+
+.dark .neu-user-btn:active {
+    background: rgba(246, 249, 252, 0.12);
+}
+
+.dark .mobile-header {
+    background: #111a2b;
+    border-bottom-color: #223049;
+}
+
+.dark .mobile-tab-bar {
+    background: #111a2b;
+    border-top-color: #223049;
+}
+
+.dark .mobile-tab {
+    color: #8fa3bf;
+}
+
+.dark .mobile-tab-active {
+    color: #9182ff !important;
+}
+
+.dark .mobile-tab-active::before {
+    background: #9182ff;
+}
+
+.dark .mobile-drawer {
+    background: #111a2b;
+    border-right-color: #223049;
+}
+
+.dark .mobile-drawer-overlay {
+    background: rgba(5, 8, 14, 0.6);
+}
+
+.dark .mobile-drawer-section {
+    background: #1a2333;
+    border-color: #223049;
+}
+
+.dark .mobile-drawer-item {
+    color: #c6d3e2;
+}
+
+.dark .mobile-drawer-item:active {
+    background: rgba(145, 130, 255, 0.2);
+    color: #9182ff;
+}
+
+.dark .mobile-drawer-item-active {
+    background: rgba(145, 130, 255, 0.15);
+    color: #9182ff !important;
+}
+
+.dark .neu-card,
+.dark .glass-panel,
+.dark .insp-menu-card {
+    background: #111a2b;
+    border-color: #223049;
+    color: #c6d3e2;
+}
+
+.dark .neu-card {
+    box-shadow:
+        rgba(0, 0, 0, 0.4) 0px 13px 27px -5px,
+        rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+}
+
+.dark .glass-panel,
+.dark .insp-menu-card {
+    box-shadow:
+        rgba(0, 0, 0, 0.4) 0px 13px 27px -5px,
+        rgba(0, 0, 0, 0.3) 0px 8px 16px -8px;
+}
+
+.dark .neu-btn {
+    color: #9182ff;
+    border-color: #533afd;
+}
+
+.dark .neu-btn:hover:not(:disabled) {
+    background: rgba(145, 130, 255, 0.15);
+    border-color: #9182ff;
+    color: #9182ff;
+}
+
+.dark .neu-btn:active:not(:disabled) {
+    background: rgba(145, 130, 255, 0.25);
+}
+
+.dark .neu-well {
+    background: #1a2333;
+    border-color: #223049;
+}
+
+.dark .neu-dial {
+    background: #111a2b;
+    border-color: #223049;
+}
+
+.dark .preview-stage {
+    background:
+        radial-gradient(
+            120% 120% at 100% 0%,
+            rgba(145, 130, 255, 0.15),
+            transparent 60%
+        ),
+        linear-gradient(135deg, rgba(0, 115, 230, 0.1), rgba(83, 58, 253, 0.08));
+}
+
+.dark .insp-pagination-btn {
+    color: #c6d3e2;
+}
+
+.dark .insp-pagination-btn:hover:not(:disabled) {
+    background: rgba(145, 130, 255, 0.15);
+    color: #9182ff;
+    border-color: rgba(145, 130, 255, 0.3);
+}
+
+.dark .insp-pagination-btn-active {
+    background: rgba(145, 130, 255, 0.15) !important;
+    color: #9182ff !important;
+    border-color: rgba(145, 130, 255, 0.3) !important;
+}
+
+.dark .btn-soft-primary {
+    background: #533afd;
+    color: #ffffff;
+}
+
+.dark .btn-soft-primary:hover:not(:disabled) {
+    background: #4328d9;
+}
+
+.dark .btn-soft-primary:active:not(:disabled) {
+    background: #3620b0;
+}
+
+.dark .btn-soft-primary:disabled,
+.dark .btn-soft-primary[disabled] {
+    background: #2a3648;
+    color: #8fa3bf;
+}
+
+.dark ::placeholder {
+    color: #8fa3bf;
+}
+
+.dark html,
+.dark {
+    color-scheme: dark;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #223049;
 }

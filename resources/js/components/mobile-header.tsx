@@ -85,9 +85,9 @@ export function MobileHeader() {
                 </div>
                 <button
                     onClick={() => setDrawerOpen(true)}
-                    className="flex size-9 items-center justify-center rounded-xl bg-muted/40 transition-colors active:bg-muted/60"
+                    className="flex size-10 items-center justify-center rounded-[4px] transition-colors hover:bg-muted active:bg-accent"
                 >
-                    <Menu className="size-5 text-foreground/70" />
+                    <Menu className="size-5 text-foreground" />
                 </button>
             </header>
 
@@ -113,13 +113,13 @@ export function MobileHeader() {
                                 <h2 className="text-sm font-bold text-foreground">
                                     Menu
                                 </h2>
-                                <p className="text-[0.65rem] text-muted-foreground/50">
+                                <p className="text-xs text-muted-foreground">
                                     Navigasi Lengkap
                                 </p>
                             </div>
                             <button
                                 onClick={() => setDrawerOpen(false)}
-                                className="flex size-8 items-center justify-center rounded-full bg-muted/50"
+                                className="flex size-10 items-center justify-center rounded-[4px] transition-colors hover:bg-muted active:bg-accent"
                             >
                                 <X className="size-4 text-muted-foreground" />
                             </button>
@@ -144,10 +144,10 @@ export function MobileHeader() {
                                                     'size-4',
                                                     hasActive
                                                         ? 'text-primary'
-                                                        : 'text-muted-foreground/40',
+                                                        : 'text-muted-foreground',
                                                 )}
                                             />
-                                            <span className="text-[0.65rem] font-semibold tracking-widest text-muted-foreground/45 uppercase">
+                                            <span className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
                                                 {section.title}
                                             </span>
                                         </div>
