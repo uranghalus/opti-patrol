@@ -14,15 +14,21 @@ use OneLogin\Saml2\Settings as SamlSettings;
 class SamlController extends Controller
 {
     /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct(
+        protected SamlAuth $samlAuth,
+    ) {}
+
+    /**
      * SP-initiated SAML login: redirect to OptiGate IdP SSO endpoint.
      */
     public function redirect()
     {
-        $settings = $this->getSamlSettings();
-        $samlAuth = new SamlAuth($settings);
-
         // login() sends a Location header and exits; unreachable after this.
-        $samlAuth->login();
+        $this->samlAuth->login();
 
         return response('', 200);
     }
@@ -33,8 +39,7 @@ class SamlController extends Controller
     public function acs(Request $request)
     {
         try {
-            $settings = $this->getSamlSettings();
-            $samlAuth = new SamlAuth($settings);
+            $samlAuth = $this->samlAuth;
 
             $samlAuth->processResponse();
 
@@ -111,8 +116,7 @@ class SamlController extends Controller
     public function logout(Request $request)
     {
         try {
-            $settings = $this->getSamlSettings();
-            $samlAuth = new SamlAuth($settings);
+            $samlAuth = $this->samlAuth;
 
             $url = $samlAuth->logout();
 
