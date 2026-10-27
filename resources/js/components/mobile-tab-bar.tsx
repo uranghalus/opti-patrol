@@ -13,7 +13,7 @@ type TabItem = {
 const mainTabs: TabItem[] = [
     { label: 'Beranda', href: dashboard(), icon: LayoutDashboard },
     { label: 'Inspeksi', href: '/inspection', icon: ListTodo },
-    { label: 'Laporan', href: '/reports', icon: FileText },
+    { label: 'Laporan', href: '/reports/apar-rekap', icon: FileText }, // FIXME: /reports exact belum terdaftar di routes/web.php; konfirmasi tujuan agregat Laporan mobile
     { label: 'Profil', href: '/settings/profile', icon: User },
 ];
 

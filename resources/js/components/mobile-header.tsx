@@ -3,6 +3,8 @@ import {
     DatabaseZap,
     FileText,
     FireExtinguisher,
+    LayoutDashboard,
+    ListTodo,
     Menu,
     ShieldCheck,
     UserCog2,
@@ -11,12 +13,23 @@ import {
 import { useState } from 'react';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
+import { dashboard } from '@/routes';
 
 const drawerSections: {
     title: string;
     icon: React.ComponentType<{ className?: string }>;
     items: { title: string; href: string }[];
 }[] = [
+    {
+        title: 'Dashboard',
+        icon: LayoutDashboard,
+        items: [
+            {
+                title: 'Dashboard',
+                href: dashboard(),
+            },
+        ],
+    },
     {
         title: 'Role Management',
         icon: UserCog2,
@@ -49,6 +62,15 @@ const drawerSections: {
             },
             { title: 'Data APAR', href: '/fire-safety/apar' },
             { title: 'Data Hydrant', href: '/fire-safety/hydrant' },
+        ],
+    },
+    {
+        title: 'Inspeksi',
+        icon: ListTodo,
+        items: [
+            { title: 'Inspeksi APAR', href: '/inspection/apar' },
+            { title: 'Inspeksi Hydrant', href: '/inspection/hydrant' },
+            { title: 'Inspeksi Cekpoint', href: '/inspection/cekpoint-security' },
         ],
     },
     {
