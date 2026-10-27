@@ -7,7 +7,9 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 use OneLogin\Saml2\Auth as SamlAuth;
+use OneLogin\Saml2\AuthnRequest;
 use OneLogin\Saml2\Metadata as SamlMetadata;
 use OneLogin\Saml2\Settings as SamlSettings;
 
@@ -27,10 +29,35 @@ class SamlController extends Controller
      */
     public function redirect()
     {
-        // login() sends a Location header and exits; unreachable after this.
-        $this->samlAuth->login();
+        $settings = new SamlSettings($this->getSamlSettings());
 
-        return response('', 200);
+        // Build AuthnRequest manually so we can capture the request ID
+        // before login() redirects (and exits).
+        $authnRequest = new AuthnRequest($settings);
+        $xml = $authnRequest->getXML();
+        $requestId = $authnRequest->getId();
+        $samlRequest = $authnRequest->getRequest();
+
+        // Store request ID in session for InResponseTo validation on ACS.
+        request()->session()->put('saml_request_id', $requestId);
+
+        $ssoUrl = $settings->getIdPSSOUrl();
+        $params = [
+            'SAMLRequest' => $samlRequest,
+            'RelayState' => URL::to('/dashboard'),
+        ];
+
+        $security = $settings->getSecurityData();
+        if (isset($security['authnRequestsSigned']) && $security['authnRequestsSigned']) {
+            $signature = (new SamlAuth($settings))->buildRequestSignature($samlRequest, $params['RelayState'], $security['signatureAlgorithm']);
+            $params['SigAlg'] = $security['signatureAlgorithm'];
+            $params['Signature'] = $signature;
+        }
+
+        $sep = str_contains($ssoUrl, '?') ? '&' : '?';
+        $url = $ssoUrl.$sep.http_build_query($params);
+
+        return redirect()->away($url);
     }
 
     /**
@@ -41,7 +68,9 @@ class SamlController extends Controller
         try {
             $samlAuth = $this->samlAuth;
 
-            $samlAuth->processResponse();
+            $requestId = request()->session()->pull('saml_request_id');
+
+            $samlAuth->processResponse($requestId);
 
             $errors = $samlAuth->getErrors();
             if (! empty($errors)) {
