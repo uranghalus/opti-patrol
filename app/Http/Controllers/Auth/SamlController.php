@@ -46,6 +46,14 @@ class SamlController extends Controller
             $errors = $samlAuth->getErrors();
             if (! empty($errors)) {
                 Log::error('SAML ACS errors: '.implode(', ', $errors));
+                Log::error('SAML ACS NameID: '.($samlAuth->getNameId() ?? 'null'));
+                Log::error('SAML ACS attributes: '.json_encode($samlAuth->getAttributes()));
+                Log::error('SAML ACS raw response: '.substr($request->input('SAMLResponse', ''), 0, 200).'...');
+
+                if (config('saml.debug', false)) {
+                    return redirect('/auth/error')
+                        ->with('error', 'Gagal memproses respons SAML: '.implode('; ', $errors));
+                }
 
                 return redirect('/auth/error')->with('error', 'Gagal memproses respons SAML.');
             }
@@ -59,10 +67,12 @@ class SamlController extends Controller
             $attributes = $samlAuth->getAttributes();
             $nameId = $samlAuth->getNameId();
 
-            $email = $attributes['email'] ?? $attributes['mail'] ?? $nameId ?? null;
-            $name = $attributes['name'] ?? $attributes['displayName'] ?? $attributes['cn'] ?? null;
-            $department = $attributes['department'] ?? null;
-            $position = $attributes['position'] ?? null;
+            $first = static fn (mixed $value): mixed => is_array($value) ? ($value[0] ?? null) : $value;
+
+            $email = $first($attributes['email'] ?? $attributes['mail'] ?? $nameId) ?? null;
+            $name = $first($attributes['name'] ?? $attributes['displayName'] ?? $attributes['cn']) ?? null;
+            $department = $first($attributes['department']) ?? null;
+            $position = $first($attributes['position']) ?? null;
 
             if (! $email) {
                 Log::warning('SAML assertion contains no email attribute');
@@ -102,7 +112,8 @@ class SamlController extends Controller
      */
     public function metadata()
     {
-        $samlSettings = new SamlSettings($this->getSamlSettings());
+        $samlSettings = new SamlSettings($this->getSamlSettings(), true);
+
         $sp = $samlSettings->getSPData();
         $xml = SamlMetadata::builder($sp);
 
