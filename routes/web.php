@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AparController;
 use App\Http\Controllers\AparInspectionController;
-use App\Http\Controllers\Auth\OIDCController;
+use App\Http\Controllers\Auth\SamlController;
 use App\Http\Controllers\CekpointSecurityController;
 use App\Http\Controllers\CPSecurityInspectionController;
 use App\Http\Controllers\DashboardController;
@@ -18,14 +18,16 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/auth/redirect')->name('home');
+Route::redirect('/', '/saml/login')->name('home');
 
-Route::get('auth/redirect', [OIDCController::class, 'redirect'])->name('authsso');
-Route::get('auth/oidc/callback', [OIDCController::class, 'callback'])->name('ssocallback');
+Route::get('saml/login', [SamlController::class, 'redirect'])->name('saml.login');
+Route::post('saml/acs', [SamlController::class, 'acs'])->name('saml.acs');
+Route::get('saml/metadata', [SamlController::class, 'metadata'])->name('saml.metadata');
+Route::get('saml/logout', [SamlController::class, 'logout'])->name('saml.logout');
 Route::get('auth/error', function () {
     $message = session('error', 'Terjadi kesalahan saat login SSO.');
 
-    return response("<h1>Login Gagal</h1><p>{$message}</p><p><a href='/auth/redirect'>Coba lagi</a></p>", 500)
+    return response("<h1>Login Gagal</h1><p>{$message}</p><p><a href='/saml/login'>Coba lagi</a></p>", 500)
         ->header('Content-Type', 'text/html');
 })->name('auth.error');
 
